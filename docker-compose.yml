@@ -1,0 +1,17 @@
+# Local development database only. The server deploy uses systemd + nginx (see deploy/).
+services:
+  db:
+    image: postgres:16
+    container_name: municipos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: municipos
+      POSTGRES_PASSWORD: municipos
+      POSTGRES_DB: municipos
+    ports:
+      - "5433:5432"
+    volumes:
+      - municipos_pg:/var/lib/postgresql/data
+
+volumes:
+  municipos_pg:
