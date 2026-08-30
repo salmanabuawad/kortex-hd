@@ -4,6 +4,8 @@ sqlalchemy==2.0.43
 pydantic==2.11.7
 python-jose[cryptography]==3.5.0
 passlib[bcrypt]==1.7.4
+# passlib 1.7.4 reads bcrypt.__about__, removed in bcrypt 4.1; pin to the last compatible release.
+bcrypt==4.0.1
 python-multipart==0.0.20
 psycopg2-binary==2.9.10
 email-validator==2.2.0

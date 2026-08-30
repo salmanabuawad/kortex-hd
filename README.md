@@ -53,7 +53,7 @@ production deploy needs a real migration (see "Known gaps").
 ## Production deploy — support.buqata.muni.il
 See [deploy/](deploy/). Target is an Ubuntu host running the same pattern as
 novandgon.kortexd.com: source in `/opt/municipos-helpdesk`, uvicorn under systemd on
-`127.0.0.1:8060`, nginx terminating TLS with Let's Encrypt and serving `frontend/dist`.
+`127.0.0.1:8071`, nginx terminating TLS with Let's Encrypt and serving `frontend/dist`.
 
 First run on the server:
 ```bash

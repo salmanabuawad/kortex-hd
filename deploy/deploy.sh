@@ -12,7 +12,7 @@ set -euo pipefail
 APP_DIR=/opt/municipos-helpdesk
 BACKEND=$APP_DIR/backend
 FRONTEND=$APP_DIR/frontend
-PORT=8060
+PORT=8071
 
 if [ ! -f "$BACKEND/.env" ]; then
   echo "missing $BACKEND/.env — copy .env.example and fill it in first" >&2
@@ -37,7 +37,7 @@ npm ci --silent || npm install --silent
 npm run build
 
 echo "==> Permissions"
-chown -R www-data:www-data "$APP_DIR"
+chown -R municipos:municipos "$APP_DIR"
 chmod 600 "$BACKEND/.env"
 
 echo "==> systemd service"

@@ -5,11 +5,11 @@ Wants=postgresql.service
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=municipos
+Group=municipos
 WorkingDirectory=/opt/municipos-helpdesk/backend
 EnvironmentFile=/opt/municipos-helpdesk/backend/.env
-ExecStart=/opt/municipos-helpdesk/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8060 --workers 2
+ExecStart=/opt/municipos-helpdesk/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8071 --workers 2
 Restart=always
 RestartSec=3
 
