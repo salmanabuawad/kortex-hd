@@ -1,0 +1,158 @@
+/* Design tokens. Every colour, space, radius and shadow in the product comes
+   from here -- components never hard-code a hex value. */
+
+:root {
+  /* --- palette ---------------------------------------------------------- */
+  --navy-900: #0b1220;
+  --navy-800: #0f172a;
+  --navy-700: #16213a;
+  --navy-600: #1e293b;
+  --navy-500: #334155;
+
+  --blue-600: #1d4ed8;
+  --blue-500: #2563eb;
+  --blue-400: #3b82f6;
+  --blue-100: #dbeafe;
+  --blue-50:  #eff6ff;
+
+  --purple-600: #7c3aed;
+  --purple-100: #ede9fe;
+
+  --green-600: #047857;
+  --green-500: #059669;
+  --green-100: #d1fae5;
+
+  --amber-600: #b45309;
+  --amber-500: #d97706;
+  --amber-100: #fef3c7;
+
+  --red-600: #b91c1c;
+  --red-500: #dc2626;
+  --red-100: #fee2e2;
+
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50:  #f8fafc;
+
+  /* --- semantic --------------------------------------------------------- */
+  --app-bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-muted: var(--slate-50);
+  --surface-sunken: var(--slate-100);
+
+  --text: var(--slate-900);
+  --text-secondary: var(--slate-600);
+  --text-muted: var(--slate-500);
+  --text-inverse: #ffffff;
+
+  --border: var(--slate-200);
+  --border-strong: var(--slate-300);
+
+  --primary: var(--blue-500);
+  --primary-hover: var(--blue-600);
+  --primary-soft: var(--blue-50);
+  --primary-border: var(--blue-100);
+
+  --accent: var(--purple-600);
+  --accent-soft: var(--purple-100);
+
+  --success: var(--green-500);
+  --success-soft: var(--green-100);
+  --success-text: var(--green-600);
+
+  --warning: var(--amber-500);
+  --warning-soft: var(--amber-100);
+  --warning-text: var(--amber-600);
+
+  --danger: var(--red-500);
+  --danger-soft: var(--red-100);
+  --danger-text: var(--red-600);
+
+  --shell-bg: var(--navy-800);
+  --shell-bg-hover: var(--navy-600);
+  --shell-text: #cbd5e1;
+  --shell-text-active: #ffffff;
+  --shell-border: rgba(148, 163, 184, 0.16);
+
+  /* --- typography ------------------------------------------------------- */
+  --font: "Assistant", "Heebo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.55;
+
+  /* --- spacing ---------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* --- radii ------------------------------------------------------------ */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  /* --- shadows ---------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12), 0 4px 8px rgba(15, 23, 42, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.25);
+
+  /* --- layout ----------------------------------------------------------- */
+  --sidebar-width: 250px;
+  --header-height: 60px;
+  --content-max: 1440px;
+
+  --transition: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Status colours, referenced by name so a chip can be driven from data. */
+:root {
+  --status-new-bg: var(--slate-100);
+  --status-new-fg: var(--slate-700);
+  --status-assigned-bg: var(--blue-50);
+  --status-assigned-fg: var(--blue-600);
+  --status-viewed-bg: #e0e7ff;
+  --status-viewed-fg: #4338ca;
+  --status-in_progress-bg: var(--purple-100);
+  --status-in_progress-fg: var(--purple-600);
+  --status-resolved-bg: var(--green-100);
+  --status-resolved-fg: var(--green-600);
+  --status-rejected-bg: var(--red-100);
+  --status-rejected-fg: var(--red-600);
+  --status-reopened-bg: var(--amber-100);
+  --status-reopened-fg: var(--amber-600);
+
+  --priority-low-bg: var(--slate-100);
+  --priority-low-fg: var(--slate-600);
+  --priority-normal-bg: var(--blue-50);
+  --priority-normal-fg: var(--blue-600);
+  --priority-high-bg: var(--amber-100);
+  --priority-high-fg: var(--amber-600);
+  --priority-urgent-bg: var(--red-100);
+  --priority-urgent-fg: var(--red-600);
+}

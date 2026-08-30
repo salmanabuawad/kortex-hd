@@ -1,2 +1,152 @@
-import {FormEvent,useState} from 'react'; import {useNavigate} from 'react-router-dom'; import {LockKeyhole,Mail,ShieldCheck} from 'lucide-react'; import {api,setToken} from '../lib/api';
-export default function Login(){const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''); const nav=useNavigate(); async function submit(e:FormEvent){e.preventDefault();setError('');try{const r=await api<{token:string}>('/auth/login',{method:'POST',body:JSON.stringify({email,password})});setToken(r.token);nav('/')}catch{setError('פרטי ההתחברות אינם תקינים')}} return <div className="login-page"><section className="login-visual"><div className="mountains"></div><div className="login-brand"><div className="crest big">ב</div><h1>מערכת ניהול קריאות</h1><p>מועצה מקומית בוקעאתא</p><div className="trust"><ShieldCheck/> סביבת עבודה מאובטחת לעובדי המועצה</div></div></section><section className="login-form-wrap"><form className="login-card" onSubmit={submit}><span className="eyebrow">SERVICEDESK</span><h2>ברוכים הבאים</h2><p>התחברו כדי לפתוח קריאה ולעקוב אחר הטיפול.</p><label>דואר אלקטרוני<div className="input-icon"><Mail size={18}/><input value={email} onChange={e=>setEmail(e.target.value)}/></div></label><label>סיסמה<div className="input-icon"><LockKeyhole size={18}/><input type="password" value={password} onChange={e=>setPassword(e.target.value)}/></div></label>{error&&<div className="error">{error}</div>}<button className="primary wide">התחברות</button><small className="login-note">גישה למשתמשים רשומים בלבד</small></form></section></div>}
+import { useState, type FormEvent } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { CheckCircle2, Eye, EyeOff, LifeBuoy, LogIn } from 'lucide-react';
+
+import { useAuth } from '../lib/auth';
+import { Banner, Button, TextField } from '../components/ui';
+
+const POINTS = [
+  'פתיחת קריאות ומעקב אחר הטיפול בהן',
+  'ניתוב אוטומטי לגורם המטפל לפי קטגוריה',
+  'אישורים, משימות משנה וספקים חיצוניים במקום אחד',
+];
+
+export default function Login() {
+  const { user, login, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  if (!loading && user) {
+    const from = (location.state as { from?: Location } | null)?.from?.pathname ?? '/';
+    return <Navigate to={from} replace />;
+  }
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      const account = await login(email.trim(), password);
+      navigate(account.must_change_password ? '/change-password' : '/', { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ההתחברות נכשלה');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="login">
+      <aside className="login__aside">
+        <div className="login__ridge" aria-hidden />
+
+        <div className="login__brand">
+          <span className="sidebar__mark"><LifeBuoy size={20} /></span>
+          <div>
+            <div className="sidebar__title">מוקד שירות</div>
+            <div className="sidebar__subtitle">מועצה מקומית בוקעאתא</div>
+          </div>
+        </div>
+
+        <div className="login__lead">
+          <h2>מערכת פניות ושירות לעובדי המועצה</h2>
+          <p>
+            כל הפניות, המשימות והאישורים במקום אחד — עם מעקב מלא אחר כל שלב בטיפול.
+          </p>
+        </div>
+
+        <div className="login__points">
+          {POINTS.map((point) => (
+            <div className="login__point" key={point}>
+              <CheckCircle2 aria-hidden />
+              <span>{point}</span>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <main className="login__main">
+        <div className="login__card">
+          <h1 className="login__title">כניסה למערכת</h1>
+          <p className="login__sub">
+            הכניסה מיועדת לעובדי המועצה הרשומים בלבד.
+          </p>
+
+          {error && (
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <Banner tone="danger">{error}</Banner>
+            </div>
+          )}
+
+          <form className="stack" onSubmit={submit} noValidate>
+            <TextField
+              label="כתובת דוא״ל"
+              type="email"
+              inputMode="email"
+              autoComplete="username"
+              className="input ltr"
+              dir="ltr"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="name@buqata.muni.il"
+            />
+
+            <div className="field">
+              <label className="field__label" htmlFor="login-password">
+                סיסמה<span className="field__required" aria-hidden>*</span>
+              </label>
+              <div className="password-input">
+                <input
+                  id="login-password"
+                  className="input"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? 'הסתרת הסיסמה' : 'הצגת הסיסמה'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="login__row">
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                />
+                <span className="checkbox__text">זכור אותי במכשיר זה</span>
+              </label>
+            </div>
+
+            <Button
+              type="submit" variant="primary" size="lg" block
+              loading={busy} icon={<LogIn size={17} />}
+            >
+              כניסה
+            </Button>
+          </form>
+
+          <p className="login__foot">
+            שכחתם סיסמה? פנו למנהל המערכת לאיפוס.
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}

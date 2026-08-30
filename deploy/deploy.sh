@@ -25,10 +25,10 @@ python3 -m venv .venv
 ./.venv/bin/pip install --upgrade pip -q
 ./.venv/bin/pip install -r requirements.txt -q
 
-echo "==> Backend: create tables"
-./.venv/bin/python -m app.init_db
+echo "==> Backend: database migrations"
+./.venv/bin/alembic upgrade head
 
-echo "==> Backend: seed admin + categories (idempotent, no demo accounts)"
+echo "==> Backend: seed reference data + admin (idempotent, no demo accounts)"
 ./.venv/bin/python -m app.seed
 
 echo "==> Frontend: build"

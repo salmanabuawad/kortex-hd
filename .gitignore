@@ -5,3 +5,7 @@ backend/.env
 backend/uploads/
 node_modules/
 dist/
+
+# HR exports and any extracted personal data stay out of the repository.
+*.xlsx
+emp_preview.json

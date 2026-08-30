@@ -1,71 +1,172 @@
-from pydantic import BaseModel, EmailStr
+"""Request bodies. Responses are shaped by app/api/serializers.py, which keeps
+field-level authorization decisions in one reviewable place."""
+from datetime import date
+
+from pydantic import BaseModel, EmailStr, Field
+
 
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
 
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class PasswordReset(BaseModel):
+    password: str
+
+
 class TicketCreate(BaseModel):
-    title: str
-    description: str
+    subject: str = Field(min_length=3, max_length=220)
+    description: str = Field(min_length=1)
     category_id: int
-    request_type: str = "fault"
-    priority: str = "normal"
-    estimated_cost: float | None = None
-    estimated_hours: float | None = None
+    request_type_id: int | None = None
+    priority: str | None = None
+    estimated_cost: float | None = Field(default=None, ge=0)
+    estimated_hours: float | None = Field(default=None, ge=0)
+
 
 class TicketUpdate(BaseModel):
-    status: str | None = None
     priority: str | None = None
-    estimated_cost: float | None = None
-    estimated_hours: float | None = None
+    estimated_cost: float | None = Field(default=None, ge=0)
+    estimated_hours: float | None = Field(default=None, ge=0)
+    subject: str | None = None
 
-class ReassignIn(BaseModel):
+
+class TicketResolve(BaseModel):
+    note: str = Field(min_length=1)
+
+
+class TicketReject(BaseModel):
+    note: str = Field(min_length=1)
+
+
+class TicketReopen(BaseModel):
+    reason: str = Field(min_length=1)
+
+
+class TransferIn(BaseModel):
     resolver_id: int
     category_id: int | None = None
-    reason: str
+    reason: str = Field(min_length=1)
+
+
+class CommentIn(BaseModel):
+    body: str = Field(min_length=1)
+    internal: bool = False
+
 
 class SubtaskCreate(BaseModel):
-    title: str
+    title: str = Field(min_length=2, max_length=220)
     description: str = ""
     assignee_type: str = "internal"
     assignee_user_id: int | None = None
     external_name: str | None = None
+    external_org: str | None = None
     external_email: EmailStr | None = None
     external_phone: str | None = None
-    delivery_channel: str | None = None
+    external_channel: str | None = None
+    due_date: date | None = None
+    priority: str = "normal"
 
-class CommentIn(BaseModel):
-    body: str
-    internal: bool = False
+
+class SubtaskUpdate(BaseModel):
+    status: str | None = None
+    title: str | None = None
+    description: str | None = None
+    due_date: date | None = None
+    priority: str | None = None
+
 
 class GuestUpdate(BaseModel):
-    status: str | None = None
     comment: str | None = None
+    status: str | None = None
+
+
+class ApprovalRequestIn(BaseModel):
+    reason: str = Field(min_length=1)
+    approver_id: int | None = None
+
 
 class ApprovalDecision(BaseModel):
     decision: str
     note: str | None = None
 
-class CategoryCreate(BaseModel):
-    name: str
+
+class CategoryIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
     description: str | None = None
+    icon: str = "LifeBuoy"
+    color: str = "blue"
     resolver_id: int | None = None
+    backup_resolver_id: int | None = None
     escalation_id: int | None = None
-    cost_threshold: float | None = None
-    hours_threshold: float | None = None
+    sla_hours: int | None = Field(default=None, ge=1)
+    default_priority: str = "normal"
     approval_new_service: bool = False
+    cost_threshold: float | None = Field(default=None, ge=0)
+    hours_threshold: float | None = Field(default=None, ge=0)
+    request_type_ids: list[int] = []
     active: bool = True
 
-class UserCreate(BaseModel):
-    name: str
+
+class UserIn(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     phone: str | None = None
-    role: str = "user"
+    role: str = "requester"
+    department_id: int | None = None
+    title: str | None = None
     password: str
+    active: bool = True
 
-class PasswordReset(BaseModel):
-    password: str
 
-class PasswordChange(BaseModel):
-    current_password: str
-    new_password: str
+class UserUpdate(BaseModel):
+    full_name: str | None = None
+    phone: str | None = None
+    role: str | None = None
+    department_id: int | None = None
+    title: str | None = None
+    active: bool | None = None
+
+
+class RequestTypeIn(BaseModel):
+    key: str = Field(min_length=2, max_length=40)
+    name: str = Field(min_length=2, max_length=120)
+    description: str | None = None
+    icon: str | None = None
+    requires_approval_default: bool = False
+    active: bool = True
+    sort_order: int = 0
+
+
+class WorkflowRuleIn(BaseModel):
+    name: str = Field(min_length=2, max_length=160)
+    description: str | None = None
+    active: bool = True
+    category_id: int | None = None
+    request_type_id: int | None = None
+    cost_gt: float | None = Field(default=None, ge=0)
+    hours_gt: float | None = Field(default=None, ge=0)
+    approver_id: int | None = None
+    sort_order: int = 0
+
+
+class SettingsIn(BaseModel):
+    values: dict[str, str | None]
+
+
+class DepartmentIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    active: bool = True
+
+
+class KnownIssueIn(BaseModel):
+    title: str = Field(min_length=2, max_length=220)
+    summary: str = Field(min_length=1)
+    resolution: str | None = None
+    category_id: int | None = None
+    active: bool = True
