@@ -186,7 +186,7 @@ export function TicketQueue(props: {
   emptyText?: string;
   emptyAction?: React.ReactNode;
 }) {
-  return <TicketTable {...props} allowLayout={false} height={360} />;
+  return <TicketTable {...props} allowLayout={false} height="100%" />;
 }
 
 export function TicketTable({

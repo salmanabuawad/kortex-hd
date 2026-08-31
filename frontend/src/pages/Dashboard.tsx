@@ -31,7 +31,7 @@ export default function Dashboard() {
 
   return (
     <PageFrame
-      reading
+      fill
       icon={<LayoutDashboard />}
       title={`שלום ${firstName}`}
       summary={staff
@@ -49,7 +49,7 @@ export default function Dashboard() {
           <Skeleton height={180} radius={12} />
         </div>
       ) : (
-        <>
+        <div className="dash">
           <div className="ops" aria-label="סיכום תפעולי">
             {staff && (
               <Link className="ops__item" to="/tickets?scope=mine">
@@ -81,93 +81,97 @@ export default function Dashboard() {
             )}
           </div>
 
-          <Card>
-            <CardHeader
-              title="דורש את תשומת לבך"
-              icon={<AlertTriangle size={17} style={{ color: 'var(--warning-text)' }} />}
-              action={
-                <Link to="/tickets?sla=breached" className="btn btn--ghost btn--sm">
-                  הצגת הכל <ArrowLeft className="dir-icon" size={15} />
-                </Link>
-              }
-            />
-            <div className="card__body">
-              <TicketQueue
-                tickets={data.needs_attention}
-                showResolver={staff}
-                emptyTitle="אין פריטים דחופים"
-                emptyText="אין קריאות שחורגות מזמן התקן או שממתינות להחלטה שלך."
-              />
-            </div>
-          </Card>
-
-          {staff && data.approvals.length > 0 && (
+          <div className="dash__grid">
             <Card>
               <CardHeader
-                title="אישורים ממתינים"
-                icon={<ShieldCheck size={17} style={{ color: 'var(--warning-text)' }} />}
+                title="דורש את תשומת לבך"
+                icon={<AlertTriangle size={17} style={{ color: 'var(--warning-text)' }} />}
                 action={
-                  <Link to="/approvals" className="btn btn--ghost btn--sm">
-                    לכל האישורים <ArrowLeft className="dir-icon" size={15} />
+                  <Link to="/tickets?sla=breached" className="btn btn--ghost btn--sm">
+                    הצגת הכל <ArrowLeft className="dir-icon" size={15} />
                   </Link>
                 }
               />
-              <div className="card__body stack">
-                {data.approvals.map((approval) => (
-                  <button
-                    key={approval.id}
-                    type="button"
-                    className="work-item"
-                    onClick={() => navigate(`/tickets/${approval.ticket_id}`)}
-                  >
-                    <span className="work-item__icon work-item__icon--external">
-                      <ShieldCheck size={17} />
-                    </span>
-                    <span className="grow">
-                      <span className="work-item__title" style={{ display: 'block' }}>
-                        {approval.ticket_subject}
-                      </span>
-                      <span className="work-item__meta">
-                        <span className="cell-number">{approval.ticket_number}</span>
-                        <span>{approval.reason}</span>
-                        {approval.amount !== null && (
-                          <strong>{formatCurrency(approval.amount)}</strong>
-                        )}
-                      </span>
-                    </span>
-                    <ArrowLeft className="dir-icon" size={16} style={{ color: 'var(--text-muted)' }} />
-                  </button>
-                ))}
+              <div className="card__body card__body--flush dash__panel">
+                <TicketQueue
+                  tickets={data.needs_attention}
+                  showResolver={staff}
+                  emptyTitle="אין פריטים דחופים"
+                  emptyText="אין קריאות שחורגות מזמן התקן או שממתינות להחלטה שלך."
+                />
               </div>
             </Card>
-          )}
 
-          <Card>
-            <CardHeader
-              title={staff ? 'עודכנו לאחרונה' : 'הקריאות האחרונות שלך'}
-              action={
-                <Link to="/tickets" className="btn btn--ghost btn--sm">
-                  לכל הקריאות <ArrowLeft className="dir-icon" size={15} />
-                </Link>
-              }
-            />
-            <div className="card__body">
-              <TicketQueue
-                tickets={data.recent}
-                showResolver={staff}
-                emptyTitle="אין קריאות פתוחות"
-                emptyText={staff
-                  ? 'כל הקריאות טופלו. כשתיפתח קריאה חדשה היא תופיע כאן.'
-                  : 'עדיין לא פתחת קריאות. אפשר לפתוח קריאה חדשה בכל עת.'}
-                emptyAction={
-                  <Link to="/tickets/new" className="btn btn--primary">
-                    <Plus size={16} /> פתיחת קריאה
-                  </Link>
-                }
-              />
+            <div className="dash__col">
+              {staff && data.approvals.length > 0 && (
+                <Card>
+                  <CardHeader
+                    title="אישורים ממתינים"
+                    icon={<ShieldCheck size={17} style={{ color: 'var(--warning-text)' }} />}
+                    action={
+                      <Link to="/approvals" className="btn btn--ghost btn--sm">
+                        לכל האישורים <ArrowLeft className="dir-icon" size={15} />
+                      </Link>
+                    }
+                  />
+                  <div className="card__body stack dash__scroll">
+                    {data.approvals.map((approval) => (
+                      <button
+                        key={approval.id}
+                        type="button"
+                        className="work-item"
+                        onClick={() => navigate(`/tickets/${approval.ticket_id}`)}
+                      >
+                        <span className="work-item__icon work-item__icon--external">
+                          <ShieldCheck size={17} />
+                        </span>
+                        <span className="grow">
+                          <span className="work-item__title" style={{ display: 'block' }}>
+                            {approval.ticket_subject}
+                          </span>
+                          <span className="work-item__meta">
+                            <span className="cell-number">{approval.ticket_number}</span>
+                            <span>{approval.reason}</span>
+                            {approval.amount !== null && (
+                              <strong>{formatCurrency(approval.amount)}</strong>
+                            )}
+                          </span>
+                        </span>
+                        <ArrowLeft className="dir-icon" size={16} style={{ color: 'var(--text-muted)' }} />
+                      </button>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader
+                  title={staff ? 'עודכנו לאחרונה' : 'הקריאות האחרונות שלך'}
+                  action={
+                    <Link to="/tickets" className="btn btn--ghost btn--sm">
+                      לכל הקריאות <ArrowLeft className="dir-icon" size={15} />
+                    </Link>
+                  }
+                />
+                <div className="card__body card__body--flush dash__panel">
+                  <TicketQueue
+                    tickets={data.recent}
+                    showResolver={staff}
+                    emptyTitle="אין קריאות פתוחות"
+                    emptyText={staff
+                      ? 'כל הקריאות טופלו. כשתיפתח קריאה חדשה היא תופיע כאן.'
+                      : 'עדיין לא פתחת קריאות. אפשר לפתוח קריאה חדשה בכל עת.'}
+                    emptyAction={
+                      <Link to="/tickets/new" className="btn btn--primary">
+                        <Plus size={16} /> פתיחת קריאה
+                      </Link>
+                    }
+                  />
+                </div>
+              </Card>
             </div>
-          </Card>
-        </>
+          </div>
+        </div>
       )}
     </PageFrame>
   );

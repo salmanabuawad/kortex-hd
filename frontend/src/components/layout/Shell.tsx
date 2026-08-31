@@ -150,8 +150,10 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="app-frame">
       <nav className="navrail" aria-label={t('nav.groupWork')}>
-        <span className="navrail__brand" aria-hidden><LifeBuoy /></span>
-        <span className="navrail__role">{t(`role.${user.role}`)}</span>
+        <span className="navrail__brand">
+          <span className="navrail__brand-name">{t('app.name')}</span>
+          <span className="navrail__brand-council">{t('app.council')}</span>
+        </span>
         {items.map((item) => (
           <button
             key={item.to}
@@ -183,11 +185,6 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <div className="workarea">
         <header className="appbar">
-          <span className="appbar__brand">
-            <span className="appbar__brand-name">{t('app.name')}</span>
-            <span className="appbar__brand-council">{t('app.council')}</span>
-          </span>
-
           <form
             className="appbar__search"
             onSubmit={(event) => {
@@ -298,7 +295,7 @@ export interface PageTab {
 /** The repeating page skeleton: tab row, blue title banner, action bar, body. */
 export function PageFrame({
   title, summary, icon, tabs, activeTab, onTabChange, actions, filters, banner,
-  reading, children,
+  reading, fill, children,
 }: {
   title: string;
   summary?: string;
@@ -311,6 +308,8 @@ export function PageFrame({
   banner?: ReactNode;
   /** Reading layout: narrower column with more spacing, for document pages. */
   reading?: boolean;
+  /** Lock the body to the viewport so the page itself does not scroll. */
+  fill?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -336,18 +335,19 @@ export function PageFrame({
         </div>
       )}
 
-      <div className={`workarea__body${reading ? ' workarea__body--reading' : ''}`}>
+      <div className={`workarea__body${reading ? ' workarea__body--reading' : ''}${fill ? ' workarea__body--fill' : ''}`}>
         <header className="pagehead">
           {icon && <span className="pagehead__icon">{icon}</span>}
           <div className="pagehead__text">
             <h1 className="pagehead__title">{title}</h1>
             {summary && <p className="pagehead__summary">{summary}</p>}
           </div>
+          {!filters && actions && <div className="pagehead__actions">{actions}</div>}
         </header>
 
         {banner}
 
-        {(actions || filters) && (
+        {filters && (
           <div className="actionbar">
             <div className="actionbar__filters">{filters}</div>
             <div className="actionbar__actions">{actions}</div>
