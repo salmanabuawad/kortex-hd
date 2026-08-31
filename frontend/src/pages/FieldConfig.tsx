@@ -258,7 +258,6 @@ export default function FieldConfigPage() {
 
   return (
     <PageFrame
-      reading
       icon={<Table2 />}
       title={t('fieldConfig.title')}
       summary={`${visibleCount} / ${rows.length}`}

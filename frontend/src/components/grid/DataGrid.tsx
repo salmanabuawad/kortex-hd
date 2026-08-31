@@ -42,6 +42,8 @@ export function widthFromChars(chars: number, padding: number, scale = 1): numbe
 }
 
 const FONT_SCALE: Record<string, number> = { small: 0.9, normal: 1, large: 1.45 };
+const ROW_HEIGHT: Record<string, number> = { small: 40, normal: 60, large: 68 };
+const HEADER_HEIGHT: Record<string, number> = { small: 40, normal: 56, large: 64 };
 
 function labelFor(config: FieldConfig, language: string): string | null {
   if (language === 'en') return config.label_en || null;
@@ -214,7 +216,8 @@ export function DataGrid<T extends object>({
           defaultColDef={defaultColDef}
           loading={loading || !ready}
           animateRows={false}
-          headerHeight={undefined}
+          headerHeight={HEADER_HEIGHT[fontSize] ?? 56}
+          rowHeight={ROW_HEIGHT[fontSize] ?? 60}
           getRowId={getRowId ? (params) => getRowId(params.data) : undefined}
           onGridReady={onGridReady}
           onGridSizeChanged={fitColumns}

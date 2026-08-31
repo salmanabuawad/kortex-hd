@@ -7,7 +7,7 @@
 :root {
   --rail-width: 228px;
   --appbar-height: 60px;
-  --tabsbar-height: 42px;
+  --tabsbar-height: 48px;
   --titlebar-height: 42px;
   --appfooter-height: 22px;
 
@@ -134,7 +134,8 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-sm);
 }
 
 .appbar__brand {
@@ -174,13 +175,14 @@
 }
 .appbar__search input {
   width: 100%;
-  height: 42px;
+  height: var(--control-height);
   padding-inline-start: var(--space-8);
   padding-inline-end: var(--space-3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface-subtle);
   font-size: var(--text-base);
+  line-height: 1.2;
   transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
 .appbar__search input:focus {
@@ -260,6 +262,7 @@
   background: none;
   font-size: var(--text-base);
   font-weight: 600;
+  line-height: 1.2;
   color: var(--text-muted);
   border-bottom: 3px solid transparent;
   white-space: nowrap;
@@ -325,16 +328,16 @@
 }
 
 .pagehead__icon {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: var(--primary);
+  color: #fff;
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
-.pagehead__icon svg { width: 18px; height: 18px; }
+.pagehead__icon svg { width: 22px; height: 22px; }
 
 .pagehead__text { flex: 1; min-width: 200px; }
 .pagehead__title {
@@ -363,10 +366,10 @@
   padding: 0;
 }
 .titlebar__icon {
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   display: grid; place-items: center;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: var(--primary);
+  color: #fff;
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
@@ -381,11 +384,12 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3);
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Primary actions sit at the far end, filters at the reading edge — the same
@@ -406,18 +410,25 @@
 }
 
 .actionbar .toolbar__search { min-width: 220px; max-width: 320px; }
-.actionbar .select { height: 34px; min-height: 34px; width: auto; min-width: 130px; }
+.actionbar .select {
+  height: var(--control-height);
+  min-height: var(--control-height);
+  width: auto;
+  min-width: 130px;
+}
 
 .checkfilter {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
+  height: var(--control-height);
+  padding: 0 var(--space-3);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--surface);
   font-size: var(--text-sm);
   font-weight: 600;
+  line-height: 1.2;
   color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
@@ -436,6 +447,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 .gridarea .ag-theme-kortex { flex: 1; min-height: 0; }
 
@@ -552,14 +564,19 @@
   .pagehead__icon, .titlebar__icon { width: 44px; height: 44px; }
   .pagehead__icon svg, .titlebar__icon svg { width: 22px; height: 22px; }
 
-  .btn { height: 44px; }
+  .btn { height: var(--control-height); }
   .btn svg { width: 20px; height: 20px; }
-  .btn--sm { height: 36px; }
+  .btn--sm { height: var(--control-height-sm); }
   .btn--lg { height: 50px; }
-  .icon-btn { width: 42px; height: 42px; }
+  .icon-btn { width: var(--control-height); height: var(--control-height); }
   .icon-btn svg { width: 20px; height: 20px; }
-  .input, .select, .textarea { min-height: 46px; }
-  .chip { height: 28px; }
+  .input, .select { min-height: var(--control-height); height: var(--control-height); }
+  .textarea { min-height: 110px; height: auto; }
+  .chip { min-height: var(--chip-height); height: auto; }
+  .filter-chip, .actionbar .select, .toolbar .select, .toolbar__search input {
+    height: var(--control-height);
+    min-height: var(--control-height);
+  }
   .avatar { width: 36px; height: 36px; }
   .avatar--lg { width: 52px; height: 52px; }
 

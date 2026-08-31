@@ -20,6 +20,9 @@
   --text-xl: 1.125rem;
   --text-2xl: 1.375rem;
   --text-3xl: 1.625rem;
+  --control-height: 2.125rem;
+  --control-height-sm: 1.875rem;
+  --chip-height: 1.375rem;
 }
 
 [data-font-size="large"] {
@@ -34,26 +37,32 @@
 
   --sidebar-width: 290px;
   --header-height: 68px;
+  --control-height: 3.125rem;
+  --control-height-sm: 2.5rem;
+  --chip-height: 2rem;
 }
 
 /* Controls have to grow with the text or the label clips. */
-[data-font-size="large"] .btn { height: 44px; padding: 0 var(--space-5); }
-[data-font-size="large"] .btn--sm { height: 36px; }
-[data-font-size="large"] .btn--lg { height: 50px; }
-[data-font-size="large"] .icon-btn { width: 42px; height: 42px; }
+[data-font-size="large"] .btn { height: var(--control-height); padding: 0 var(--space-5); }
+[data-font-size="large"] .btn--sm { height: var(--control-height-sm); }
+[data-font-size="large"] .btn--lg { height: 3.5rem; }
+[data-font-size="large"] .icon-btn { width: var(--control-height); height: var(--control-height); }
 [data-font-size="large"] .input,
-[data-font-size="large"] .select,
-[data-font-size="large"] .textarea { min-height: 46px; }
-[data-font-size="large"] .chip { height: 26px; padding: 0 var(--space-3); }
+[data-font-size="large"] .select { min-height: var(--control-height); height: var(--control-height); }
+[data-font-size="large"] .textarea { min-height: 110px; height: auto; }
+[data-font-size="large"] .chip { min-height: var(--chip-height); padding: 0.25em var(--space-3); }
 [data-font-size="large"] .avatar { width: 36px; height: 36px; }
 [data-font-size="large"] .avatar--lg { width: 50px; height: 50px; }
-[data-font-size="large"] .toolbar .select { height: 42px; min-height: 42px; }
+[data-font-size="large"] .toolbar .select,
+[data-font-size="large"] .actionbar .select,
+[data-font-size="large"] .filter-chip,
+[data-font-size="large"] .toolbar__search input { height: var(--control-height); min-height: var(--control-height); }
 
-[data-font-size="small"] .btn { height: 32px; }
+[data-font-size="small"] .btn { height: var(--control-height); }
 [data-font-size="small"] .icon-btn { width: 30px; height: 30px; }
 [data-font-size="small"] .input,
 [data-font-size="small"] .select,
-[data-font-size="small"] .textarea { min-height: 34px; }
+[data-font-size="small"] .textarea { min-height: var(--control-height); }
 
 /* --- contrast ------------------------------------------------------------
    light / dark shift the neutral ground. "contrast" is the accessibility
@@ -196,62 +205,71 @@
   --ag-font-family: var(--font);
   --ag-font-size: var(--text-base);
   --ag-background-color: var(--surface);
-  --ag-header-background-color: var(--surface-muted);
+  --ag-header-background-color: var(--surface-subtle);
   --ag-odd-row-background-color: var(--surface);
-  --ag-row-hover-color: var(--surface-muted);
+  --ag-row-hover-color: var(--teal-50);
   --ag-selected-row-background-color: var(--primary-soft);
   --ag-border-color: var(--border);
-  --ag-header-foreground-color: var(--text-muted);
+  --ag-header-foreground-color: var(--text);
   --ag-foreground-color: var(--text);
   --ag-row-border-color: var(--border);
-  --ag-header-column-separator-display: none;
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-color: var(--border);
+  --ag-header-column-separator-height: 50%;
   --ag-borders: none;
-  --ag-row-height: 56px;
-  --ag-header-height: 48px;
+  --ag-row-height: 60px;
+  --ag-header-height: 56px;
   --ag-cell-horizontal-padding: 18px;
   --ag-grid-size: 5px;
   --ag-wrapper-border-radius: 0;
 }
 
 .ag-theme-kortex .ag-header {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
   font-weight: 600;
   background: var(--surface-subtle);
 }
 .ag-theme-kortex .ag-header-cell-text {
   font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.02em;
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.ag-theme-kortex .ag-header-cell-label {
+  overflow: visible;
 }
 .ag-theme-kortex .ag-row { cursor: pointer; border-bottom-color: var(--border); }
-.ag-theme-kortex .ag-row-hover { background: var(--surface-subtle); }
+.ag-theme-kortex .ag-row-hover { background: var(--teal-50); }
 .ag-theme-kortex .ag-row-focus { background: var(--primary-soft); }
 .ag-theme-kortex .ag-cell {
   display: flex;
   align-items: center;
-  line-height: 1.4;
+  line-height: 1.3;
 }
-.ag-theme-kortex .ag-overlay-no-rows-wrapper { padding-top: var(--space-10); }
+.ag-theme-kortex .ag-overlay-no-rows-wrapper {
+  padding-top: var(--space-10);
+  font-size: var(--text-md);
+}
 
 /* Grid density on large displays. Declared here rather than in layout.css:
    the base .ag-theme-kortex block lives in this file, and an equal-specificity
    rule in an earlier stylesheet would lose the cascade. */
 @media (min-width: 1280px) {
-  .ag-theme-quartz.ag-theme-kortex { --ag-row-height: 60px; --ag-header-height: 52px; }
+  .ag-theme-quartz.ag-theme-kortex { --ag-row-height: 62px; --ag-header-height: 56px; }
 }
 @media (min-width: 1900px) {
-  .ag-theme-quartz.ag-theme-kortex { --ag-row-height: 64px; --ag-header-height: 54px; }
+  .ag-theme-quartz.ag-theme-kortex { --ag-row-height: 68px; --ag-header-height: 60px; }
 }
 
 [data-font-size="small"] .ag-theme-quartz.ag-theme-kortex {
-  --ag-row-height: 36px;
-  --ag-header-height: 34px;
+  --ag-row-height: 40px;
+  --ag-header-height: 40px;
   --ag-cell-horizontal-padding: 12px;
 }
 [data-font-size="large"] .ag-theme-quartz.ag-theme-kortex {
-  --ag-row-height: 60px;
-  --ag-header-height: 54px;
+  --ag-row-height: 68px;
+  --ag-header-height: 64px;
   --ag-cell-horizontal-padding: 22px;
 }
 [data-font-size="large"] .ag-theme-kortex .ag-header-cell-text { font-size: var(--text-sm); }

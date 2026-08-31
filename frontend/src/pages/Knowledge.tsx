@@ -57,34 +57,34 @@ export default function Knowledge() {
 
   return (
     <PageFrame
-      reading
       icon={<BookOpen />}
       title="פתרונות ותקלות ידועות"
-        summary="מאגר פתרונות שמוצג לפונים בעת פתיחת קריאה בקטגוריה המתאימה"
-        actions={user?.role === 'admin' ? (
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
-            פתרון חדש
-          </Button>
-        ) : undefined}
+      summary="מאגר פתרונות שמוצג לפונים בעת פתיחת קריאה בקטגוריה המתאימה"
+      actions={user?.role === 'admin' ? (
+        <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
+          פתרון חדש
+        </Button>
+      ) : undefined}
+      filters={
+        <>
+          <div className="toolbar__search">
+            <Search aria-hidden />
+            <input
+              type="search" value={search} aria-label="חיפוש פתרונות"
+              placeholder="חיפוש לפי נושא או תוכן…"
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <select className="select" value={categoryId} aria-label="סינון לפי קטגוריה"
+                  onChange={(event) => setCategoryId(event.target.value)}>
+            <option value="">כל הקטגוריות</option>
+            {categories.data?.items.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
+        </>
+      }
     >
-
-      <div className="toolbar">
-        <div className="toolbar__search">
-          <Search aria-hidden />
-          <input
-            type="search" value={search} aria-label="חיפוש פתרונות"
-            placeholder="חיפוש לפי נושא או תוכן…"
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-        <select className="select" value={categoryId} aria-label="סינון לפי קטגוריה"
-                onChange={(event) => setCategoryId(event.target.value)}>
-          <option value="">כל הקטגוריות</option>
-          {categories.data?.items.map((category) => (
-            <option key={category.id} value={category.id}>{category.name}</option>
-          ))}
-        </select>
-      </div>
 
       {issues.error ? (
         <ErrorState message={issues.error} onRetry={issues.reload} />

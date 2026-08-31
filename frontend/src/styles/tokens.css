@@ -55,19 +55,19 @@
   --slate-50:  #f4f7f5;
 
   /* --- semantic --------------------------------------------------------- */
-  --app-bg: #e8ede9;
+  --app-bg: #d5ddd8;
   --surface: #ffffff;
-  --surface-subtle: #f4f7f5;
+  --surface-subtle: #eef3f0;
   --surface-muted: var(--surface-subtle);
   --surface-sunken: #dce4e0;
 
-  --text: #14221e;
-  --text-secondary: #3f534e;
-  --text-muted: #5c6f6a;
+  --text: #0f1c19;
+  --text-secondary: #35514b;
+  --text-muted: #54706a;
   --text-inverse: #ffffff;
 
-  --border: #d4ddd8;
-  --border-strong: #b8c5bf;
+  --border: #c3d0c9;
+  --border-strong: #a7b8b0;
 
   --primary: var(--teal-700);
   --primary-hover: var(--teal-800);
@@ -148,6 +148,12 @@
   --content-max: 1440px;
 
   --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Controls must be taller than the type they hold. Hebrew glyphs (Assistant)
+     have deep descenders; body line-height 1.55 will clip inside a 34px box. */
+  --control-height: 2.75rem;
+  --control-height-sm: 2.25rem;
+  --chip-height: 1.75rem;
 }
 
 /* Status colours: quiet by default; semantic fill only when it means something. */

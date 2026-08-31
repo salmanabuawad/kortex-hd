@@ -131,13 +131,10 @@ export default function Approvals() {
 
   return (
     <PageFrame
-      reading
       icon={<ShieldCheck />}
       title="אישורים"
-        summary="בקשות שחצו את ספי העלות, השעות או סוג השירות שהוגדרו בקטגוריה"
-    >
-
-      <div className="toolbar">
+      summary="בקשות שחצו את ספי העלות, השעות או סוג השירות שהוגדרו בקטגוריה"
+      filters={
         <div className="segmented" role="group" aria-label="סינון אישורים">
           {FILTERS.map((option) => (
             <button
@@ -149,7 +146,8 @@ export default function Approvals() {
             </button>
           ))}
         </div>
-      </div>
+      }
+    >
 
       {approvals.error ? (
         <ErrorState message={approvals.error} onRetry={approvals.reload} />

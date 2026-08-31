@@ -59,47 +59,47 @@ export default function Directory() {
 
   return (
     <PageFrame
-      reading
       icon={<Users />}
       title="משתמשים ואנשי קשר"
-        summary="רק משתמשים רשומים ופעילים יכולים להתחבר ולפתוח קריאות"
-        actions={
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
-            משתמש חדש
-          </Button>
-        }
+      summary="רק משתמשים רשומים ופעילים יכולים להתחבר ולפתוח קריאות"
+      actions={
+        <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
+          משתמש חדש
+        </Button>
+      }
+      filters={
+        <>
+          <div className="toolbar__search">
+            <Search aria-hidden />
+            <input
+              type="search" value={search} aria-label="חיפוש משתמשים"
+              placeholder="חיפוש לפי שם או דוא״ל…"
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <select className="select" value={role} aria-label="סינון לפי תפקיד"
+                  onChange={(event) => setRole(event.target.value)}>
+            <option value="">כל התפקידים</option>
+            {ROLES.map((value) => (
+              <option key={value} value={value}>{roleLabel[value]}</option>
+            ))}
+          </select>
+          <select className="select" value={departmentId} aria-label="סינון לפי מחלקה"
+                  onChange={(event) => setDepartmentId(event.target.value)}>
+            <option value="">כל המחלקות</option>
+            {departments.data?.items.map((department) => (
+              <option key={department.id} value={department.id}>{department.name}</option>
+            ))}
+          </select>
+          <select className="select" value={status} aria-label="סינון לפי מצב"
+                  onChange={(event) => setStatus(event.target.value)}>
+            <option value="">פעילים ולא פעילים</option>
+            <option value="active">פעילים</option>
+            <option value="inactive">לא פעילים</option>
+          </select>
+        </>
+      }
     >
-
-      <div className="toolbar">
-        <div className="toolbar__search">
-          <Search aria-hidden />
-          <input
-            type="search" value={search} aria-label="חיפוש משתמשים"
-            placeholder="חיפוש לפי שם או דוא״ל…"
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-        <select className="select" value={role} aria-label="סינון לפי תפקיד"
-                onChange={(event) => setRole(event.target.value)}>
-          <option value="">כל התפקידים</option>
-          {ROLES.map((value) => (
-            <option key={value} value={value}>{roleLabel[value]}</option>
-          ))}
-        </select>
-        <select className="select" value={departmentId} aria-label="סינון לפי מחלקה"
-                onChange={(event) => setDepartmentId(event.target.value)}>
-          <option value="">כל המחלקות</option>
-          {departments.data?.items.map((department) => (
-            <option key={department.id} value={department.id}>{department.name}</option>
-          ))}
-        </select>
-        <select className="select" value={status} aria-label="סינון לפי מצב"
-                onChange={(event) => setStatus(event.target.value)}>
-          <option value="">פעילים ולא פעילים</option>
-          <option value="active">פעילים</option>
-          <option value="inactive">לא פעילים</option>
-        </select>
-      </div>
 
       {users.error ? (
         <ErrorState message={users.error} onRetry={users.reload} />
