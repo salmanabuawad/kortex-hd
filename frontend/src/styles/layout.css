@@ -1,7 +1,7 @@
 /* ==========================================================================
    Application frame
 
-   Slim forest rail + light application bar + large work canvas.
+   Forest chrome: rail + application bar share --shell-chrome.
    ========================================================================== */
 
 :root {
@@ -13,6 +13,7 @@
 
   --shell-navy: var(--forest-900);
   --shell-navy-soft: var(--forest-700);
+  --shell-chrome: var(--forest-800);
   --banner-blue: var(--primary);
   --banner-blue-dark: var(--primary-hover);
 }
@@ -20,6 +21,7 @@
 [data-contrast="contrast"] {
   --shell-navy: #000000;
   --shell-navy-soft: #262626;
+  --shell-chrome: #000000;
   --banner-blue: #0a5c4d;
   --banner-blue-dark: #064036;
 }
@@ -41,8 +43,7 @@
 
 .navrail {
   grid-column: 1;
-  background:
-    linear-gradient(180deg, var(--forest-800) 0%, var(--forest-950) 72%);
+  background: var(--shell-chrome);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -125,8 +126,8 @@
 
 .appbar {
   height: var(--appbar-height);
-  background: var(--surface);
-  color: var(--text);
+  background: var(--shell-chrome);
+  color: #fff;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -134,8 +135,7 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid rgba(197, 221, 214, 0.14);
 }
 
 .appbar__brand {
@@ -149,12 +149,12 @@
   font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--forest-800);
+  color: #fff;
 }
 .appbar__brand-council {
   font-size: var(--text-xs);
   font-weight: 500;
-  color: var(--text-muted);
+  color: rgba(197, 221, 214, 0.72);
 }
 
 .appbar__spacer { flex: 1; }
@@ -170,7 +170,7 @@
   top: 50%;
   transform: translateY(-50%);
   width: 18px; height: 18px;
-  color: var(--text-muted);
+  color: rgba(197, 221, 214, 0.72);
   pointer-events: none;
 }
 .appbar__search input {
@@ -178,18 +178,20 @@
   height: var(--control-height);
   padding-inline-start: var(--space-8);
   padding-inline-end: var(--space-3);
-  border: 1px solid var(--border-strong);
+  border: 1px solid rgba(197, 221, 214, 0.18);
   border-radius: var(--radius-md);
-  background: var(--surface-subtle);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
   font-size: var(--text-base);
   line-height: 1.2;
   transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
+.appbar__search input::placeholder { color: rgba(197, 221, 214, 0.55); }
 .appbar__search input:focus {
   outline: none;
-  background: var(--surface);
-  border-color: var(--primary);
-  box-shadow: var(--shadow-focus);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--teal-400);
+  box-shadow: 0 0 0 3px rgba(43, 181, 170, 0.28);
 }
 
 .appbar__btn {
@@ -200,11 +202,14 @@
   border: none;
   border-radius: var(--radius);
   background: transparent;
-  color: var(--text-secondary);
+  color: rgba(197, 221, 214, 0.9);
   transition: background var(--transition), color var(--transition);
 }
 .appbar__btn:hover,
-.appbar__btn[aria-expanded="true"] { background: var(--surface-sunken); color: var(--text); }
+.appbar__btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
 .appbar__btn svg { width: 20px; height: 20px; }
 
 .appbar__user {
@@ -216,13 +221,13 @@
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--text);
+  color: #fff;
   min-width: 0;
 }
 .appbar__user:hover,
 .appbar__user[aria-expanded="true"] {
-  background: var(--surface-subtle);
-  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(197, 221, 214, 0.18);
 }
 .appbar__user-name {
   font-size: var(--text-sm);
@@ -231,10 +236,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #fff;
 }
 .appbar__user-role {
   font-size: 10px;
-  color: var(--text-muted);
+  color: rgba(197, 221, 214, 0.72);
   line-height: 1.1;
 }
 
