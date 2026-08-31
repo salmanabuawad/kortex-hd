@@ -148,13 +148,13 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-frame">
-      <nav className="rail" aria-label={t('nav.groupWork')}>
-        <span className="rail__role">{t(`role.${user.role}`)}</span>
+      <nav className="navrail" aria-label={t('nav.groupWork')}>
+        <span className="navrail__role">{t(`role.${user.role}`)}</span>
         {items.map((item) => (
           <button
             key={item.to}
             type="button"
-            className={`rail__item${isActive(item.to) ? ' rail__item--active' : ''}`}
+            className={`navrail__item${isActive(item.to) ? ' navrail__item--active' : ''}`}
             title={t(item.labelKey)}
             aria-label={t(item.labelKey)}
             aria-current={isActive(item.to) ? 'page' : undefined}
@@ -163,10 +163,10 @@ export function Shell({ children }: { children: ReactNode }) {
             {item.icon}
           </button>
         ))}
-        <span className="rail__spacer" />
+        <span className="navrail__spacer" />
         <button
           type="button"
-          className="rail__item"
+          className="navrail__item"
           title={t('nav.logout')}
           aria-label={t('nav.logout')}
           onClick={() => { logout(); navigate('/login'); }}
