@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import {
-  KeyRound, Mail, Pencil, Phone, Plus, Search, UserCheck, UserX, Users,
+  KeyRound, Pencil, Plus, Search, UserCheck, UserX, Users,
 } from 'lucide-react';
 
 import { get, patch, post } from '../lib/api';
@@ -10,9 +11,10 @@ import { relativeTime } from '../lib/format';
 import { roleLabel, roleTone } from '../lib/labels';
 import type { Department, Role, User } from '../lib/types';
 import {
-  Avatar, Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, SelectField, SkeletonRows, TextField,
+  Banner, Button, Chip, Dialog, ErrorState, SelectField, TextField,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
+import { DataGrid } from '../components/grid/DataGrid';
 import { useToast } from '../components/ui/toast';
 
 const ROLES: Role[] = ['requester', 'resolver', 'approver', 'admin'];
@@ -102,66 +104,14 @@ export default function Directory() {
       {users.error ? (
         <ErrorState message={users.error} onRetry={users.reload} />
       ) : (
-        <Card>
-          <div className="card__body card__body--flush">
-            {users.loading ? <SkeletonRows rows={6} /> : (users.data?.items.length ?? 0) === 0 ? (
-              <EmptyState title="לא נמצאו משתמשים" text="נסו לשנות את הסינון." />
-            ) : (
-              <div>
-                {users.data?.items.map((person) => (
-                  <div className="person-card" key={person.id}
-                       style={{ borderBottom: '1px solid var(--border)',
-                                opacity: person.active ? 1 : 0.6 }}>
-                    <Avatar initials={person.initials} size="lg" muted={!person.active} />
-                    <div className="grow">
-                      <div className="row row--wrap" style={{ gap: 'var(--space-2)' }}>
-                        <strong>{person.full_name}</strong>
-                        <Chip tone={roleTone[person.role]}>{roleLabel[person.role]}</Chip>
-                        {!person.active && <Chip tone="red">לא פעיל</Chip>}
-                        {person.must_change_password && (
-                          <Chip tone="amber">ממתין להחלפת סיסמה</Chip>
-                        )}
-                      </div>
-                      <div className="cell-meta">
-                        {[person.title, person.department].filter(Boolean).join(' · ') || '—'}
-                      </div>
-                      <div className="person-card__contact">
-                        <span><Mail aria-hidden /><span className="ltr">{person.email}</span></span>
-                        {person.phone && (
-                          <span><Phone aria-hidden /><span className="ltr">{person.phone}</span></span>
-                        )}
-                        <span>
-                          {person.last_login_at
-                            ? `כניסה אחרונה ${relativeTime(person.last_login_at)}`
-                            : 'טרם התחבר'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="row" style={{ gap: 'var(--space-2)' }}>
-                      <Button size="sm" icon={<Pencil size={14} />}
-                              onClick={() => setEditing(person)}>
-                        עריכה
-                      </Button>
-                      <Button size="sm" variant="ghost" icon={<KeyRound size={14} />}
-                              onClick={() => setResetting(person)}>
-                        איפוס סיסמה
-                      </Button>
-                      {person.id !== me?.id && (
-                        <Button
-                          size="sm" variant="ghost"
-                          icon={person.active ? <UserX size={14} /> : <UserCheck size={14} />}
-                          onClick={() => void toggleActive(person)}
-                        >
-                          {person.active ? 'השבתה' : 'הפעלה'}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Card>
+        <DirectoryGrid
+          rows={users.data?.items ?? []}
+          loading={users.loading}
+          meId={me?.id}
+          onEdit={setEditing}
+          onReset={setResetting}
+          onToggle={(person) => void toggleActive(person)}
+        />
       )}
 
       <UserDialog
@@ -177,6 +127,95 @@ export default function Directory() {
         onDone={() => { users.reload(); setResetting(null); }}
       />
     </PageFrame>
+  );
+}
+
+function DirectoryGrid({
+  rows, loading, meId, onEdit, onReset, onToggle,
+}: {
+  rows: User[];
+  loading: boolean;
+  meId?: number;
+  onEdit: (person: User) => void;
+  onReset: (person: User) => void;
+  onToggle: (person: User) => void;
+}) {
+  const columns = useMemo<ColDef<User>[]>(() => [
+    {
+      colId: 'full_name', field: 'full_name', headerName: 'שם', flex: 1.2, minWidth: 180,
+      cellRenderer: (p: ICellRendererParams<User>) => (
+        <span className="grid-person">
+          <span className={`avatar avatar--sm${p.data?.active ? '' : ' avatar--muted'}`}>
+            {p.data?.initials}
+          </span>
+          <span className="grid-subject">{p.value}</span>
+        </span>
+      ),
+    },
+    {
+      colId: 'role', field: 'role', headerName: 'תפקיד', width: 140,
+      cellRenderer: (p: ICellRendererParams<User>) =>
+        p.data ? <Chip tone={roleTone[p.data.role]}>{roleLabel[p.data.role]}</Chip> : null,
+    },
+    {
+      colId: 'department', headerName: 'מחלקה', width: 160,
+      valueGetter: (p) => p.data?.department ?? '—',
+    },
+    {
+      colId: 'email', field: 'email', headerName: 'דוא״ל', flex: 1, minWidth: 180,
+      cellRenderer: (p: ICellRendererParams<User>) =>
+        <span className="ltr cell-meta">{p.value}</span>,
+    },
+    {
+      colId: 'phone', field: 'phone', headerName: 'טלפון', width: 140,
+      cellRenderer: (p: ICellRendererParams<User>) =>
+        <span className="ltr cell-meta">{p.value || '—'}</span>,
+    },
+    {
+      colId: 'active', headerName: 'מצב', width: 120,
+      valueGetter: (p) => (p.data?.active ? 'פעיל' : 'לא פעיל'),
+      cellRenderer: (p: ICellRendererParams<User>) =>
+        p.data?.active
+          ? <Chip tone="green">פעיל</Chip>
+          : <Chip tone="red">לא פעיל</Chip>,
+    },
+    {
+      colId: 'last_login_at', headerName: 'כניסה אחרונה', width: 150,
+      valueGetter: (p) => p.data?.last_login_at,
+      cellRenderer: (p: ICellRendererParams<User>) =>
+        <span className="cell-meta">
+          {p.data?.last_login_at ? relativeTime(p.data.last_login_at) : 'טרם התחבר'}
+        </span>,
+    },
+    {
+      colId: 'actions', headerName: '', width: 280, sortable: false, filter: false,
+      cellRenderer: (p: ICellRendererParams<User>) => p.data ? (
+        <span className="row ag-ignore-row-click" style={{ gap: 6 }}>
+          <Button size="sm" icon={<Pencil size={14} />} onClick={() => onEdit(p.data!)}>עריכה</Button>
+          <Button size="sm" variant="ghost" icon={<KeyRound size={14} />}
+                  onClick={() => onReset(p.data!)}>איפוס</Button>
+          {p.data.id !== meId && (
+            <Button size="sm" variant="ghost"
+                    icon={p.data.active ? <UserX size={14} /> : <UserCheck size={14} />}
+                    onClick={() => onToggle(p.data!)}>
+              {p.data.active ? 'השבתה' : 'הפעלה'}
+            </Button>
+          )}
+        </span>
+      ) : null,
+    },
+  ], [meId, onEdit, onReset, onToggle]);
+
+  return (
+    <DataGrid<User>
+      gridName="directory"
+      rows={rows}
+      columns={columns}
+      loading={loading}
+      getRowId={(row) => String(row.id)}
+      onRowClick={onEdit}
+      emptyMessage="לא נמצאו משתמשים"
+    />
   );
 }
 

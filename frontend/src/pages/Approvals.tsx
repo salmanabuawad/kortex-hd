@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { ArrowLeft, CheckCircle2, MessageSquare, ShieldCheck, XCircle } from 'lucide-react';
 
 import { get, post } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useAction, useAsync } from '../lib/hooks';
-import { formatCurrency, formatDate, formatHours, relativeTime } from '../lib/format';
-import { approvalStatusLabel, approvalStatusTone, priorityLabel, triggerLabel } from '../lib/labels';
+import { formatCurrency, formatHours, relativeTime } from '../lib/format';
+import { approvalStatusLabel, approvalStatusTone, triggerLabel } from '../lib/labels';
 import type { Approval } from '../lib/types';
 import {
-  Button, Card, Chip, EmptyState, ErrorState, SkeletonRows,
+  Button, Chip, ErrorState,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
+import { DataGrid } from '../components/grid/DataGrid';
 import { NoteDialog } from '../components/tickets/dialogs';
 import { useToast } from '../components/ui/toast';
 
@@ -48,6 +50,85 @@ export default function Approvals() {
 
   const isAdmin = user?.role === 'admin';
 
+  const columns = useMemo<ColDef<Approval>[]>(() => [
+    {
+      colId: 'ticket_number', field: 'ticket_number', headerName: 'מספר', width: 130,
+      cellRenderer: (p: ICellRendererParams<Approval>) =>
+        <span className="cell-number">{p.value}</span>,
+    },
+    {
+      colId: 'ticket_subject', field: 'ticket_subject', headerName: 'קריאה', flex: 2, minWidth: 220,
+      cellRenderer: (p: ICellRendererParams<Approval>) => (
+        <span>
+          <span className="grid-subject">{p.value}</span>
+          <span className="cell-meta" style={{ display: 'block' }}>{p.data?.reason}</span>
+        </span>
+      ),
+    },
+    {
+      colId: 'category', field: 'category', headerName: 'קטגוריה', width: 150,
+    },
+    {
+      colId: 'status', field: 'status', headerName: 'סטטוס', width: 120,
+      cellRenderer: (p: ICellRendererParams<Approval>) => p.data
+        ? <Chip tone={approvalStatusTone[p.data.status]} dot>{approvalStatusLabel[p.data.status]}</Chip>
+        : null,
+    },
+    {
+      colId: 'reason', headerName: 'סיבה', width: 140,
+      valueGetter: (p) => triggerLabel[p.data?.trigger ?? ''] ?? p.data?.trigger,
+    },
+    {
+      colId: 'amount', headerName: 'עלות / היקף', width: 140,
+      valueGetter: (p) => [
+        p.data?.amount != null ? formatCurrency(p.data.amount) : null,
+        p.data?.hours != null ? formatHours(p.data.hours) : null,
+      ].filter(Boolean).join(' · ') || '—',
+    },
+    {
+      colId: 'requested_by', headerName: 'מבקש', width: 140,
+      valueGetter: (p) => p.data?.requested_by?.name ?? '—',
+    },
+    {
+      colId: 'requested_at', headerName: 'נשלח', width: 130,
+      valueGetter: (p) => p.data?.requested_at,
+      cellRenderer: (p: ICellRendererParams<Approval>) =>
+        <span className="cell-meta">{p.data ? relativeTime(p.data.requested_at) : ''}</span>,
+    },
+    {
+      colId: 'actions', headerName: '', flex: 1, minWidth: 280, sortable: false, filter: false,
+      cellRenderer: (p: ICellRendererParams<Approval>) => {
+        if (!p.data) return null;
+        const mine = p.data.approver?.id === user?.id;
+        const canDecide = p.data.status === 'pending' && (mine || isAdmin);
+        return (
+          <span className="row ag-ignore-row-click" style={{ gap: 6 }}>
+            {canDecide ? (
+              <>
+                <Button size="sm" variant="success" loading={busy} icon={<CheckCircle2 size={16} />}
+                        onClick={() => decide(p.data!, 'approved')}>אישור</Button>
+                <Button size="sm" variant="danger" loading={busy} icon={<XCircle size={16} />}
+                        onClick={() => decide(p.data!, 'rejected')}>דחייה</Button>
+                <Button size="sm" variant="ghost" icon={<MessageSquare size={16} />}
+                        onClick={() => setInfoFor(p.data!)}>הבהרה</Button>
+              </>
+            ) : (
+              <span className="cell-meta">
+                {p.data.status === 'pending'
+                  ? `ממתין ל־${p.data.approver?.name ?? 'מאשר'}`
+                  : `הוכרע ${relativeTime(p.data.decided_at)}`}
+              </span>
+            )}
+            <Button size="sm" variant="ghost"
+                    onClick={() => navigate(`/tickets/${p.data!.ticket_id}`)}>
+              פתיחה <ArrowLeft className="dir-icon" size={14} />
+            </Button>
+          </span>
+        );
+      },
+    },
+  ], [busy, isAdmin, user?.id]);
+
   return (
     <PageFrame
       reading
@@ -72,129 +153,16 @@ export default function Approvals() {
 
       {approvals.error ? (
         <ErrorState message={approvals.error} onRetry={approvals.reload} />
-      ) : approvals.loading ? (
-        <SkeletonRows rows={3} />
-      ) : (approvals.data?.items.length ?? 0) === 0 ? (
-        <Card>
-          <div className="card__body">
-            <EmptyState
-              icon={<ShieldCheck />}
-              title={filter === 'pending' ? 'אין בקשות הממתינות לך' : 'אין בקשות להצגה'}
-              text={filter === 'pending'
-                ? 'כשקריאה תחצה סף אישור, הבקשה תופיע כאן.'
-                : 'נסו לשנות את הסינון.'}
-            />
-          </div>
-        </Card>
       ) : (
-        <div className="stack">
-          {approvals.data?.items.map((approval) => {
-            const mine = approval.approver?.id === user?.id;
-            const canDecide = approval.status === 'pending' && (mine || isAdmin);
-            return (
-              <div className="approval-card" key={approval.id}>
-                <span className="kpi__icon kpi__icon--amber"><ShieldCheck /></span>
-                <div className="grow">
-                  <div className="row row--wrap" style={{ gap: 'var(--space-2)' }}>
-                    <Chip tone={approvalStatusTone[approval.status]} dot>
-                      {approvalStatusLabel[approval.status]}
-                    </Chip>
-                    <Chip tone="neutral">
-                      {triggerLabel[approval.trigger] ?? approval.trigger}
-                    </Chip>
-                    {approval.ticket_priority && (
-                      <Chip tone="blue">{priorityLabel[approval.ticket_priority]}</Chip>
-                    )}
-                    <span className="cell-number">{approval.ticket_number}</span>
-                    <span className="cell-meta">{approval.category}</span>
-                  </div>
-
-                  <button
-                    className="work-item__title"
-                    style={{
-                      marginTop: 'var(--space-2)', background: 'none', border: 'none',
-                      padding: 0, textAlign: 'start', fontSize: 'var(--text-md)',
-                    }}
-                    onClick={() => navigate(`/tickets/${approval.ticket_id}`)}
-                  >
-                    {approval.ticket_subject}
-                  </button>
-                  <p className="cell-meta" style={{ marginTop: 2 }}>{approval.reason}</p>
-
-                  <div className="approval-card__facts">
-                    {approval.amount !== null && (
-                      <div>
-                        <div className="approval-card__fact-label">עלות משוערת</div>
-                        <div className="approval-card__fact-value">
-                          {formatCurrency(approval.amount)}
-                        </div>
-                      </div>
-                    )}
-                    {approval.hours !== null && (
-                      <div>
-                        <div className="approval-card__fact-label">היקף עבודה</div>
-                        <div className="approval-card__fact-value">
-                          {formatHours(approval.hours)}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="approval-card__fact-label">מבקש</div>
-                      <div className="approval-card__fact-value">
-                        {approval.requested_by?.name ?? '—'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="approval-card__fact-label">נשלח</div>
-                      <div className="approval-card__fact-value">
-                        {formatDate(approval.requested_at)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="approval-card__fact-label">ממתין</div>
-                      <div className="approval-card__fact-value">
-                        {relativeTime(approval.requested_at)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {approval.decision_note && (
-                    <p className="cell-meta">הערה: {approval.decision_note}</p>
-                  )}
-
-                  <div className="approval-card__actions">
-                    {canDecide ? (
-                      <>
-                        <Button variant="success" loading={busy}
-                                icon={<CheckCircle2 size={16} />}
-                                onClick={() => decide(approval, 'approved')}>
-                          אישור
-                        </Button>
-                        <Button variant="danger" loading={busy} icon={<XCircle size={16} />}
-                                onClick={() => decide(approval, 'rejected')}>
-                          דחייה
-                        </Button>
-                        <Button variant="ghost" icon={<MessageSquare size={16} />}
-                                onClick={() => setInfoFor(approval)}>
-                          בקשת הבהרה
-                        </Button>
-                      </>
-                    ) : (
-                      <span className="cell-meta">
-                        {approval.status === 'pending'
-                          ? `ממתין להחלטת ${approval.approver?.name ?? 'הגורם המאשר'}`
-                          : `הוכרע ${relativeTime(approval.decided_at)}`}
-                      </span>
-                    )}
-                    <Button variant="ghost" onClick={() => navigate(`/tickets/${approval.ticket_id}`)}>
-                      פתיחת הקריאה <ArrowLeft className="dir-icon" size={15} />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DataGrid<Approval>
+          gridName="approvals"
+          rows={approvals.data?.items ?? []}
+          columns={columns}
+          loading={approvals.loading}
+          getRowId={(row) => String(row.id)}
+          onRowClick={(row) => navigate(`/tickets/${row.ticket_id}`)}
+          emptyMessage={filter === 'pending' ? 'אין בקשות הממתינות לך' : 'אין בקשות להצגה'}
+        />
       )}
 
       {/* "Request more information" posts a comment on the parent ticket, which

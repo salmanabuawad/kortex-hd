@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import {
   ChevronDown, ChevronUp, Eye, EyeOff, Pin, RotateCcw, Save, Table2,
 } from 'lucide-react';
 
 import { del, get, put } from '../lib/api';
 import { useAction, useAsync } from '../lib/hooks';
-import type { FieldConfig } from '../components/grid/DataGrid';
-import { widthFromChars } from '../components/grid/DataGrid';
+import { DataGrid, widthFromChars, type FieldConfig } from '../components/grid/DataGrid';
 import { PageFrame } from '../components/layout/Shell';
-import { Banner, Button, Card, ErrorState, SkeletonRows, Switch } from '../components/ui';
+import { Banner, Button, ErrorState, Switch } from '../components/ui';
 import { useToast } from '../components/ui/toast';
 
 /** The columns each grid offers. Kept here rather than derived from the page so
@@ -42,6 +42,12 @@ const GRID_FIELDS: Record<string, { field: string; labelKey: string; width: numb
     { field: 'phone', labelKey: 'columns.phone', width: 14 },
     { field: 'role', labelKey: 'columns.role', width: 12 },
     { field: 'department', labelKey: 'columns.department', width: 18 },
+  ],
+  knowledge: [
+    { field: 'title', labelKey: 'columns.subject', width: 28 },
+    { field: 'category', labelKey: 'columns.category', width: 16 },
+    { field: 'summary', labelKey: 'columns.subject', width: 34 },
+    { field: 'resolution', labelKey: 'columns.subject', width: 28 },
   ],
   subtasks: [
     { field: 'number', labelKey: 'columns.number', width: 14 },
@@ -146,6 +152,110 @@ export default function FieldConfigPage() {
 
   const visibleCount = useMemo(() => rows.filter((r) => r.visible).length, [rows]);
 
+  const columns = useMemo<ColDef<Row>[]>(() => [
+    {
+      colId: 'order', headerName: t('fieldConfig.order'), width: 110, sortable: false, filter: false,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <span className="row ag-ignore-row-click" style={{ gap: 2 }}>
+            <button type="button" className="icon-btn" disabled={index <= 0}
+                    aria-label={t('fieldConfig.moveUp')} onClick={() => move(index, -1)}>
+              <ChevronUp size={16} />
+            </button>
+            <button type="button" className="icon-btn" disabled={index >= rows.length - 1}
+                    aria-label={t('fieldConfig.moveDown')} onClick={() => move(index, 1)}>
+              <ChevronDown size={16} />
+            </button>
+          </span>
+        );
+      },
+    },
+    {
+      colId: 'field', headerName: t('fieldConfig.field'), flex: 1, minWidth: 160,
+      valueGetter: (p) => p.data?.builtInLabel,
+      cellRenderer: (p: ICellRendererParams<Row>) => (
+        <span>
+          <span className="grid-subject">{p.data?.builtInLabel}</span>
+          <span className="cell-number" style={{ display: 'block' }}>{p.data?.field_name}</span>
+        </span>
+      ),
+    },
+    {
+      colId: 'label_he', headerName: t('fieldConfig.labelHe'), flex: 1, minWidth: 140,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <input className="input ag-ignore-row-click" value={p.data?.label_he ?? ''}
+                 placeholder={p.data?.builtInLabel}
+                 onChange={(e) => update(index, { label_he: e.target.value })} />
+        );
+      },
+    },
+    {
+      colId: 'label_ar', headerName: t('fieldConfig.labelAr'), flex: 1, minWidth: 140,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <input className="input ag-ignore-row-click" value={p.data?.label_ar ?? ''}
+                 onChange={(e) => update(index, { label_ar: e.target.value })} />
+        );
+      },
+    },
+    {
+      colId: 'label_en', headerName: t('fieldConfig.labelEn'), flex: 1, minWidth: 140,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <input className="input ltr ag-ignore-row-click" dir="ltr" value={p.data?.label_en ?? ''}
+                 onChange={(e) => update(index, { label_en: e.target.value })} />
+        );
+      },
+    },
+    {
+      colId: 'width', headerName: t('fieldConfig.width'), width: 130,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <span>
+            <input className="input ag-ignore-row-click" type="number" min={2} max={120}
+                   value={p.data?.width_chars ?? 2}
+                   onChange={(e) => update(index, { width_chars: Number(e.target.value) || 2 })} />
+            <span className="cell-meta num">
+              {widthFromChars(p.data?.width_chars ?? 2, p.data?.padding ?? 0)}px
+            </span>
+          </span>
+        );
+      },
+    },
+    {
+      colId: 'visible', headerName: t('fieldConfig.visible'), width: 110, sortable: false, filter: false,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <span className="row ag-ignore-row-click" style={{ gap: 8 }}>
+            <Switch checked={!!p.data?.visible} label={t('fieldConfig.visible')}
+                    onChange={(value) => update(index, { visible: value })} />
+            {p.data?.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+          </span>
+        );
+      },
+    },
+    {
+      colId: 'pinned', headerName: t('fieldConfig.pinned'), width: 110, sortable: false, filter: false,
+      cellRenderer: (p: ICellRendererParams<Row>) => {
+        const index = rows.findIndex((row) => row.field_name === p.data?.field_name);
+        return (
+          <span className="row ag-ignore-row-click" style={{ gap: 8 }}>
+            <Switch checked={!!p.data?.pinned} label={t('fieldConfig.pinned')}
+                    onChange={(value) => update(index, { pinned: value, pin_side: value ? 'right' : null })} />
+            {p.data?.pinned && <Pin size={16} />}
+          </span>
+        );
+      },
+    },
+  ], [rows, t]);
+
   return (
     <PageFrame
       reading
@@ -178,91 +288,16 @@ export default function FieldConfigPage() {
 
       {saved.error ? (
         <ErrorState message={saved.error} onRetry={saved.reload} />
-      ) : saved.loading ? (
-        <Card><div className="card__body"><SkeletonRows rows={6} /></div></Card>
       ) : (
-        <Card>
-          <div className="card__body card__body--flush">
-            <div className="table-wrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 90 }}>{t('fieldConfig.order')}</th>
-                    <th>{t('fieldConfig.field')}</th>
-                    <th>{t('fieldConfig.labelHe')}</th>
-                    <th>{t('fieldConfig.labelAr')}</th>
-                    <th>{t('fieldConfig.labelEn')}</th>
-                    <th style={{ width: 130 }}>{t('fieldConfig.width')}</th>
-                    <th style={{ width: 90 }}>{t('fieldConfig.visible')}</th>
-                    <th style={{ width: 90 }}>{t('fieldConfig.pinned')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, index) => (
-                    <tr key={row.field_name} style={{ opacity: row.visible ? 1 : 0.55 }}>
-                      <td data-label={t('fieldConfig.order')}>
-                        <div className="row" style={{ gap: 2 }}>
-                          <button type="button" className="icon-btn" disabled={index === 0}
-                                  aria-label={t('fieldConfig.moveUp')}
-                                  onClick={() => move(index, -1)}>
-                            <ChevronUp size={15} />
-                          </button>
-                          <button type="button" className="icon-btn"
-                                  disabled={index === rows.length - 1}
-                                  aria-label={t('fieldConfig.moveDown')}
-                                  onClick={() => move(index, 1)}>
-                            <ChevronDown size={15} />
-                          </button>
-                        </div>
-                      </td>
-                      <td data-label={t('fieldConfig.field')}>
-                        <div style={{ fontWeight: 600 }}>{row.builtInLabel}</div>
-                        <div className="cell-number">{row.field_name}</div>
-                      </td>
-                      <td data-label={t('fieldConfig.labelHe')}>
-                        <input className="input" value={row.label_he ?? ''}
-                               placeholder={row.builtInLabel}
-                               onChange={(e) => update(index, { label_he: e.target.value })} />
-                      </td>
-                      <td data-label={t('fieldConfig.labelAr')}>
-                        <input className="input" value={row.label_ar ?? ''}
-                               onChange={(e) => update(index, { label_ar: e.target.value })} />
-                      </td>
-                      <td data-label={t('fieldConfig.labelEn')}>
-                        <input className="input ltr" dir="ltr" value={row.label_en ?? ''}
-                               onChange={(e) => update(index, { label_en: e.target.value })} />
-                      </td>
-                      <td data-label={t('fieldConfig.width')}>
-                        <input className="input" type="number" min={2} max={120}
-                               value={row.width_chars}
-                               onChange={(e) => update(index,
-                                 { width_chars: Number(e.target.value) || 2 })} />
-                        <div className="cell-meta num">
-                          {widthFromChars(row.width_chars, row.padding)}px
-                        </div>
-                      </td>
-                      <td data-label={t('fieldConfig.visible')}>
-                        <div className="row" style={{ gap: 'var(--space-2)' }}>
-                          <Switch checked={row.visible} label={t('fieldConfig.visible')}
-                                  onChange={(value) => update(index, { visible: value })} />
-                          {row.visible ? <Eye size={15} /> : <EyeOff size={15} />}
-                        </div>
-                      </td>
-                      <td data-label={t('fieldConfig.pinned')}>
-                        <div className="row" style={{ gap: 'var(--space-2)' }}>
-                          <Switch checked={row.pinned} label={t('fieldConfig.pinned')}
-                                  onChange={(value) => update(index,
-                                    { pinned: value, pin_side: value ? 'right' : null })} />
-                          {row.pinned && <Pin size={15} />}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </Card>
+        <DataGrid<Row>
+          gridName="field-config-editor"
+          rows={rows}
+          columns={columns}
+          loading={saved.loading}
+          getRowId={(row) => row.field_name}
+          allowLayout={false}
+          emptyMessage={t('grid.noRows')}
+        />
       )}
     </PageFrame>
   );

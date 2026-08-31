@@ -223,7 +223,11 @@ export function DataGrid<T extends object>({
           onColumnResized={(event) => { if (event.finished && event.source !== 'gridInitializing') setDirty(true); }}
           onColumnVisible={() => setDirty(true)}
           onSortChanged={() => setDirty(true)}
-          onRowClicked={(event) => { if (event.data && onRowClick) onRowClick(event.data); }}
+          onRowClicked={(event) => {
+            const target = event.event?.target as HTMLElement | undefined;
+            if (target?.closest('button, a, input, select, textarea, .ag-ignore-row-click')) return;
+            if (event.data && onRowClick) onRowClick(event.data);
+          }}
           overlayNoRowsTemplate={`<span style="color:var(--text-muted);font-size:var(--text-base)">${
             emptyMessage ?? t('grid.noRows')}</span>`}
           enableRtl={i18n.dir() === 'rtl'}

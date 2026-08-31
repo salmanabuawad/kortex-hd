@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { ClipboardList, Inbox, Plus, Search, ShieldCheck, X } from 'lucide-react';
 
 import { get } from '../lib/api';
 import { isStaff, useAuth } from '../lib/auth';
 import { useAsync, useDebounced } from '../lib/hooks';
-import { relativeTime } from '../lib/format';
 import type { Category, Paged, TicketRow, UserBrief } from '../lib/types';
 import { Button, ErrorState } from '../components/ui';
 import { PageFrame, type PageTab } from '../components/layout/Shell';
 import { DataGrid } from '../components/grid/DataGrid';
-import { PriorityChip, SlaChip, StatusChip } from '../components/tickets';
+import { useTicketColumns } from '../components/tickets';
 
 const GRID = 'tickets';
 const PAGE_SIZE = 100;
@@ -67,85 +65,7 @@ export default function Tickets() {
     () => (staff ? get<{ items: UserBrief[] }>('/users/assignable')
       : Promise.resolve({ items: [] })), [staff]);
 
-  const columns = useMemo<ColDef<TicketRow>[]>(() => {
-    const defs: ColDef<TicketRow>[] = [
-      {
-        colId: 'number', field: 'number', headerName: t('columns.number'), width: 120,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
-          <span className="cell-number">{p.value}</span>,
-      },
-      {
-        colId: 'subject', field: 'subject', headerName: t('columns.subject'), flex: 2,
-        minWidth: 240,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
-          <span>
-            <span className="grid-subject">{p.value}</span>
-            {p.data?.approval_state === 'pending' && (
-              <span className="chip chip--amber" style={{ marginInlineStart: 8 }}>
-                {t('approvalStatus.pending')}
-              </span>
-            )}
-          </span>
-        ),
-      },
-      {
-        colId: 'category', headerName: t('columns.category'), width: 150,
-        valueGetter: (p) => p.data?.category?.name ?? '—',
-      },
-      {
-        colId: 'request_type', headerName: t('columns.requestType'), width: 130,
-        valueGetter: (p) => p.data?.request_type?.name ?? '—',
-      },
-      {
-        colId: 'requester', headerName: t('columns.requester'), width: 160,
-        valueGetter: (p) => p.data?.requester?.name ?? '—',
-        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
-          <span className="grid-person">
-            <span className="avatar avatar--sm avatar--muted">{p.data?.requester?.initials ?? '—'}</span>
-            <span className="cell-meta">{p.data?.requester?.name ?? '—'}</span>
-          </span>
-        ),
-      },
-      {
-        colId: 'resolver', headerName: t('columns.resolver'), width: 160,
-        valueGetter: (p) => p.data?.resolver?.name ?? t('common.unassigned'),
-        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
-          <span className="cell-meta">{p.data?.resolver?.name ?? t('common.unassigned')}</span>
-        ),
-      },
-      {
-        colId: 'priority', headerName: t('columns.priority'), width: 110,
-        valueGetter: (p) => p.data?.priority,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
-          p.data ? <PriorityChip priority={p.data.priority} /> : null,
-      },
-      {
-        colId: 'status', headerName: t('columns.status'), width: 130,
-        valueGetter: (p) => p.data?.status,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
-          p.data ? <StatusChip status={p.data.status} /> : null,
-      },
-      {
-        colId: 'sla', headerName: t('columns.sla'), width: 120,
-        valueGetter: (p) => p.data?.sla_state,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
-          p.data ? <SlaChip state={p.data.sla_state} minutes={p.data.sla_minutes_remaining} /> : null,
-      },
-      {
-        colId: 'updated_at', headerName: t('columns.updated'), width: 130,
-        valueGetter: (p) => p.data?.updated_at,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
-          <span className="cell-meta">{relativeTime(p.value)}</span>,
-      },
-      {
-        colId: 'created_at', headerName: t('columns.created'), width: 130,
-        valueGetter: (p) => p.data?.created_at,
-        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
-          <span className="cell-meta">{relativeTime(p.value)}</span>,
-      },
-    ];
-    return staff ? defs : defs.filter((d) => d.colId !== 'resolver');
-  }, [t, staff]);
+  const columns = useTicketColumns(staff);
 
   const activeFilters = [status, categoryId, priority, resolverId, slaState].filter(Boolean).length;
 

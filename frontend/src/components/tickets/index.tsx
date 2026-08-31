@@ -1,12 +1,16 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { Check, CircleDot, Clock, X } from 'lucide-react';
 
 import { formatSlaRemaining, relativeTime } from '../../lib/format';
 import {
-  priorityLabel, priorityTone, slaLabel, slaTone, statusLabel, statusTone,
+  priorityLabel, slaLabel, statusLabel, statusTone, slaTone, priorityTone,
 } from '../../lib/labels';
 import type { Priority, SlaState, TicketRow, TicketStatus } from '../../lib/types';
-import { Avatar, Chip, EmptyState, SkeletonRows } from '../ui';
+import { Chip, EmptyState } from '../ui';
+import { DataGrid } from '../grid/DataGrid';
 
 export const StatusChip = ({ status }: { status: TicketStatus }) => (
   <Chip tone={statusTone[status]} dot>{statusLabel[status]}</Chip>
@@ -87,69 +91,94 @@ export function LifecycleRail({ status }: { status: TicketStatus }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Ticket table                                                                */
+/* Ticket grid                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export function TicketQueue({
-  tickets, loading, emptyTitle, emptyText, emptyAction,
-}: {
-  tickets: TicketRow[];
-  loading?: boolean;
-  emptyTitle?: string;
-  emptyText?: string;
-  emptyAction?: React.ReactNode;
-}) {
-  const navigate = useNavigate();
+export function useTicketColumns(showResolver = true): ColDef<TicketRow>[] {
+  const { t } = useTranslation();
 
-  if (loading) return <SkeletonRows rows={5} />;
-  if (!tickets.length) {
-    return (
-      <EmptyState
-        title={emptyTitle ?? 'אין קריאות להצגה'}
-        text={emptyText}
-        action={emptyAction}
-      />
-    );
-  }
-
-  return (
-    <div className="queue">
-      {tickets.map((ticket) => (
-        <button
-          type="button"
-          className="queue-item"
-          key={ticket.id}
-          onClick={() => navigate(`/tickets/${ticket.id}`)}
-          aria-label={`קריאה ${ticket.number}: ${ticket.subject}`}
-        >
-          <span className="queue-item__num num">{ticket.number}</span>
+  return useMemo(() => {
+    const defs: ColDef<TicketRow>[] = [
+      {
+        colId: 'number', field: 'number', headerName: t('columns.number'), width: 130,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
+          <span className="cell-number">{p.value}</span>,
+      },
+      {
+        colId: 'subject', field: 'subject', headerName: t('columns.subject'), flex: 2,
+        minWidth: 240,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
           <span>
-            <span className="queue-item__subject">{ticket.subject}</span>
-            <span className="queue-item__meta">
-              <span>{ticket.requester?.name ?? '—'}</span>
-              {ticket.category?.name && <span>{ticket.category.name}</span>}
-              {ticket.resolver?.name && <span>{ticket.resolver.name}</span>}
-              <span>{relativeTime(ticket.updated_at)}</span>
-            </span>
-          </span>
-          <span className="queue-item__flags">
-            <StatusChip status={ticket.status} />
-            {(ticket.priority === 'high' || ticket.priority === 'urgent'
-              || ticket.sla_state === 'breached' || ticket.sla_state === 'at_risk') && (
-              ticket.sla_state === 'breached' || ticket.sla_state === 'at_risk'
-                ? <SlaChip state={ticket.sla_state} minutes={ticket.sla_minutes_remaining} />
-                : <PriorityChip priority={ticket.priority} />
+            <span className="grid-subject">{p.value}</span>
+            {p.data?.approval_state === 'pending' && (
+              <span className="chip chip--amber" style={{ marginInlineStart: 8 }}>
+                {t('approvalStatus.pending')}
+              </span>
             )}
           </span>
-        </button>
-      ))}
-    </div>
-  );
+        ),
+      },
+      {
+        colId: 'category', headerName: t('columns.category'), width: 160,
+        valueGetter: (p) => p.data?.category?.name ?? '—',
+      },
+      {
+        colId: 'request_type', headerName: t('columns.requestType'), width: 140,
+        valueGetter: (p) => p.data?.request_type?.name ?? '—',
+      },
+      {
+        colId: 'requester', headerName: t('columns.requester'), width: 170,
+        valueGetter: (p) => p.data?.requester?.name ?? '—',
+        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
+          <span className="grid-person">
+            <span className="avatar avatar--sm avatar--muted">{p.data?.requester?.initials ?? '—'}</span>
+            <span className="cell-meta">{p.data?.requester?.name ?? '—'}</span>
+          </span>
+        ),
+      },
+      {
+        colId: 'resolver', headerName: t('columns.resolver'), width: 170,
+        valueGetter: (p) => p.data?.resolver?.name ?? t('common.unassigned'),
+        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
+          <span className="cell-meta">{p.data?.resolver?.name ?? t('common.unassigned')}</span>
+        ),
+      },
+      {
+        colId: 'priority', headerName: t('columns.priority'), width: 120,
+        valueGetter: (p) => p.data?.priority,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
+          p.data ? <PriorityChip priority={p.data.priority} /> : null,
+      },
+      {
+        colId: 'status', headerName: t('columns.status'), width: 140,
+        valueGetter: (p) => p.data?.status,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
+          p.data ? <StatusChip status={p.data.status} /> : null,
+      },
+      {
+        colId: 'sla', headerName: t('columns.sla'), width: 130,
+        valueGetter: (p) => p.data?.sla_state,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
+          p.data ? <SlaChip state={p.data.sla_state} minutes={p.data.sla_minutes_remaining} /> : null,
+      },
+      {
+        colId: 'updated_at', headerName: t('columns.updated'), width: 140,
+        valueGetter: (p) => p.data?.updated_at,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
+          <span className="cell-meta">{relativeTime(p.value)}</span>,
+      },
+      {
+        colId: 'created_at', headerName: t('columns.created'), width: 140,
+        valueGetter: (p) => p.data?.created_at,
+        cellRenderer: (p: ICellRendererParams<TicketRow>) =>
+          <span className="cell-meta">{relativeTime(p.value)}</span>,
+      },
+    ];
+    return showResolver ? defs : defs.filter((d) => d.colId !== 'resolver');
+  }, [t, showResolver]);
 }
 
-export function TicketTable({
-  tickets, loading, showResolver = true, emptyTitle, emptyText, emptyAction,
-}: {
+export function TicketQueue(props: {
   tickets: TicketRow[];
   loading?: boolean;
   showResolver?: boolean;
@@ -157,10 +186,27 @@ export function TicketTable({
   emptyText?: string;
   emptyAction?: React.ReactNode;
 }) {
-  const navigate = useNavigate();
+  return <TicketTable {...props} allowLayout={false} height={360} />;
+}
 
-  if (loading) return <SkeletonRows rows={6} />;
-  if (!tickets.length) {
+export function TicketTable({
+  tickets, loading, showResolver = true, emptyTitle, emptyText, emptyAction,
+  allowLayout = false, height = 420,
+}: {
+  tickets: TicketRow[];
+  loading?: boolean;
+  showResolver?: boolean;
+  emptyTitle?: string;
+  emptyText?: string;
+  emptyAction?: React.ReactNode;
+  allowLayout?: boolean;
+  height?: number | string;
+}) {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const columns = useTicketColumns(showResolver);
+
+  if (!loading && !tickets.length) {
     return (
       <EmptyState
         title={emptyTitle ?? 'אין קריאות להצגה'}
@@ -170,70 +216,17 @@ export function TicketTable({
     );
   }
 
-  const open = (id: number) => navigate(`/tickets/${id}`);
-
   return (
-    <div className="table-wrap">
-      <table className="table">
-        <thead>
-          <tr>
-            <th scope="col">מספר</th>
-            <th scope="col">נושא</th>
-            <th scope="col">קטגוריה</th>
-            <th scope="col">פונה</th>
-            {showResolver && <th scope="col">מטפל</th>}
-            <th scope="col">דחיפות</th>
-            <th scope="col">סטטוס</th>
-            <th scope="col">זמן תקן</th>
-            <th scope="col">עודכן</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.map((ticket) => (
-            <tr
-              key={ticket.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => open(ticket.id)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  open(ticket.id);
-                }
-              }}
-              aria-label={`קריאה ${ticket.number}: ${ticket.subject}`}
-            >
-              <td data-label="מספר"><span className="cell-number">{ticket.number}</span></td>
-              <td data-label="subject">
-                <div className="cell-subject">{ticket.subject}</div>
-                {ticket.approval_state === 'pending' && (
-                  <span className="cell-meta">ממתין לאישור</span>
-                )}
-              </td>
-              <td data-label="קטגוריה">{ticket.category?.name ?? '—'}</td>
-              <td data-label="פונה">
-                <span className="row" style={{ gap: 'var(--space-2)' }}>
-                  <Avatar initials={ticket.requester?.initials ?? '—'} size="sm" muted />
-                  <span>{ticket.requester?.name ?? '—'}</span>
-                </span>
-              </td>
-              {showResolver && (
-                <td data-label="מטפל">{ticket.resolver?.name ?? (
-                  <span className="cell-meta">לא הוקצה</span>
-                )}</td>
-              )}
-              <td data-label="דחיפות"><PriorityChip priority={ticket.priority} /></td>
-              <td data-label="סטטוס"><StatusChip status={ticket.status} /></td>
-              <td data-label="זמן תקן">
-                <SlaChip state={ticket.sla_state} minutes={ticket.sla_minutes_remaining} />
-              </td>
-              <td data-label="עודכן">
-                <span className="cell-meta">{relativeTime(ticket.updated_at)}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataGrid<TicketRow>
+      gridName="tickets"
+      rows={tickets}
+      columns={columns}
+      loading={loading}
+      getRowId={(row) => String(row.id)}
+      onRowClick={(row) => navigate(`/tickets/${row.id}`)}
+      allowLayout={allowLayout}
+      emptyMessage={emptyTitle ?? t('grid.noRows')}
+      height={height}
+    />
   );
 }

@@ -1,15 +1,17 @@
-import { useState } from 'react';
-import { BookOpen, Lightbulb, Plus, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { BookOpen, Plus, Search } from 'lucide-react';
 
 import { get, post } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useAction, useAsync } from '../lib/hooks';
 import type { Category, KnownIssue } from '../lib/types';
 import {
-  Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, SelectField,
-  SkeletonRows, TextAreaField, TextField,
+  Banner, Button, Dialog, ErrorState, SelectField,
+  TextAreaField, TextField,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
+import { DataGrid } from '../components/grid/DataGrid';
 import { useToast } from '../components/ui/toast';
 
 export default function Knowledge() {
@@ -31,6 +33,27 @@ export default function Knowledge() {
     !term
     || issue.title.toLowerCase().includes(term)
     || issue.summary.toLowerCase().includes(term));
+
+  const columns = useMemo<ColDef<KnownIssue>[]>(() => [
+    {
+      colId: 'title', field: 'title', headerName: 'נושא', flex: 1.4, minWidth: 220,
+      cellRenderer: (p: ICellRendererParams<KnownIssue>) =>
+        <span className="grid-subject">{p.value}</span>,
+    },
+    {
+      colId: 'category', field: 'category', headerName: 'קטגוריה', width: 180,
+      valueGetter: (p) => p.data?.category ?? 'ללא שיוך',
+    },
+    {
+      colId: 'summary', field: 'summary', headerName: 'מה לבדוק', flex: 2, minWidth: 240,
+      cellRenderer: (p: ICellRendererParams<KnownIssue>) =>
+        <span className="cell-meta">{p.value}</span>,
+    },
+    {
+      colId: 'resolution', field: 'resolution', headerName: 'פתרון', flex: 1.5, minWidth: 200,
+      valueGetter: (p) => p.data?.resolution ?? '—',
+    },
+  ], []);
 
   return (
     <PageFrame
@@ -65,43 +88,16 @@ export default function Knowledge() {
 
       {issues.error ? (
         <ErrorState message={issues.error} onRetry={issues.reload} />
-      ) : issues.loading ? (
-        <SkeletonRows rows={4} />
-      ) : visible.length === 0 ? (
-        <Card>
-          <div className="card__body">
-            <EmptyState
-              icon={<BookOpen />}
-              title={term ? 'לא נמצאו פתרונות' : 'אין עדיין פתרונות במאגר'}
-              text="פתרון שנוסף כאן מוצג אוטומטית לפונה בעת פתיחת קריאה באותה קטגוריה."
-            />
-          </div>
-        </Card>
       ) : (
-        <div className="grid grid--2">
-          {visible.map((issue) => (
-            <Card key={issue.id}>
-              <div className="cat-card">
-                <span className="cat-card__icon cat-card__icon--amber">
-                  <Lightbulb size={20} />
-                </span>
-                <div className="grow">
-                  <div className="row row--wrap" style={{ gap: 'var(--space-2)' }}>
-                    <h3 style={{ fontSize: 'var(--text-md)' }}>{issue.title}</h3>
-                    {issue.category && <Chip tone="blue">{issue.category}</Chip>}
-                  </div>
-                  <p style={{ marginTop: 'var(--space-2)' }}>{issue.summary}</p>
-                  {issue.resolution && (
-                    <div className="cat-card__rules">
-                      <strong>פתרון</strong>
-                      <span>{issue.resolution}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <DataGrid<KnownIssue>
+          gridName="knowledge"
+          rows={visible}
+          columns={columns}
+          loading={issues.loading}
+          getRowId={(row) => String(row.id)}
+          allowLayout={false}
+          emptyMessage={term ? 'לא נמצאו פתרונות' : 'אין עדיין פתרונות במאגר'}
+        />
       )}
 
       <KnownIssueDialog

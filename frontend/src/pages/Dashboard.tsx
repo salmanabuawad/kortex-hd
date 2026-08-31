@@ -94,6 +94,7 @@ export default function Dashboard() {
             <div className="card__body">
               <TicketQueue
                 tickets={data.needs_attention}
+                showResolver={staff}
                 emptyTitle="אין פריטים דחופים"
                 emptyText="אין קריאות שחורגות מזמן התקן או שממתינות להחלטה שלך."
               />
@@ -153,6 +154,7 @@ export default function Dashboard() {
             <div className="card__body">
               <TicketQueue
                 tickets={data.recent}
+                showResolver={staff}
                 emptyTitle="אין קריאות פתוחות"
                 emptyText={staff
                   ? 'כל הקריאות טופלו. כשתיפתח קריאה חדשה היא תופיע כאן.'

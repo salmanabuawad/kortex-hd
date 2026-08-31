@@ -23,8 +23,7 @@ interface RailItem {
   roles?: Role[];
 }
 
-/** The rail carries the primary destinations only — one icon each. Everything
- *  else lives on the tab row of the section it belongs to. */
+/** Primary destinations: icon plus label. Section tabs stay on the work canvas. */
 const RAIL: RailItem[] = [
   { to: '/', icon: <LayoutDashboard />, labelKey: 'nav.dashboard' },
   { to: '/tickets', icon: <ClipboardList />, labelKey: 'nav.allTickets' },
@@ -165,6 +164,7 @@ export function Shell({ children }: { children: ReactNode }) {
             onClick={() => navigate(item.to)}
           >
             {item.icon}
+            <span className="navrail__label">{t(item.labelKey)}</span>
           </button>
         ))}
         <span className="navrail__spacer" />
@@ -177,6 +177,7 @@ export function Shell({ children }: { children: ReactNode }) {
           onClick={() => { logout(); navigate('/login'); }}
         >
           <LogOut />
+          <span className="navrail__label">{t('nav.logout')}</span>
         </button>
       </nav>
 

@@ -5,8 +5,8 @@
    ========================================================================== */
 
 :root {
-  --rail-width: 64px;
-  --appbar-height: 52px;
+  --rail-width: 228px;
+  --appbar-height: 60px;
   --tabsbar-height: 42px;
   --titlebar-height: 42px;
   --appfooter-height: 22px;
@@ -44,9 +44,9 @@
   background: var(--shell-navy);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 2px;
-  padding: var(--space-3) 0 var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-2);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -56,20 +56,20 @@
 }
 
 .navrail__brand {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  margin-bottom: var(--space-2);
+  margin: 0 auto var(--space-2);
   flex-shrink: 0;
 }
-.navrail__brand svg { width: 18px; height: 18px; }
+.navrail__brand svg { width: 24px; height: 24px; }
 
 .navrail__role {
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.55);
   padding-bottom: var(--space-2);
@@ -80,24 +80,33 @@
 }
 
 .navrail__item {
-  width: 44px;
+  width: 100%;
   min-height: 44px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
+  justify-content: flex-start;
+  gap: var(--space-3);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.82);
   transition: background var(--transition), color var(--transition);
   flex-shrink: 0;
   position: relative;
-  padding: 6px 0;
+  padding: 8px 10px;
+  text-align: start;
 }
 .navrail__item:hover { background: var(--shell-navy-soft); color: #fff; }
-.navrail__item svg { width: 18px; height: 18px; }
+.navrail__item svg { width: 24px; height: 24px; flex-shrink: 0; }
+.navrail__label {
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .navrail__item--active {
   background: rgba(20, 145, 138, 0.28);
@@ -107,28 +116,7 @@
 [dir="rtl"] .navrail__item--active { box-shadow: inset -3px 0 0 var(--teal-500); }
 [data-contrast="contrast"] .navrail__item--active { box-shadow: inset 0 0 0 2px #fff; }
 
-/* Intentional labels: a quiet tooltip, not a heavy flyout. */
-.navrail__item::after {
-  content: attr(data-label);
-  position: absolute;
-  inset-inline-start: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--forest-950);
-  color: #fff;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 6px 10px;
-  border-radius: var(--radius);
-  border: 1px solid var(--shell-border);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--transition);
-  z-index: 80;
-}
-.navrail__item:hover::after,
-.navrail__item:focus-visible::after { opacity: 1; }
+.navrail__item::after { display: none; }
 
 .navrail__spacer { flex: 1; }
 
@@ -178,13 +166,13 @@
   inset-inline-start: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  width: 16px; height: 16px;
+  width: 18px; height: 18px;
   color: var(--text-muted);
   pointer-events: none;
 }
 .appbar__search input {
   width: 100%;
-  height: 36px;
+  height: 42px;
   padding-inline-start: var(--space-8);
   padding-inline-end: var(--space-3);
   border: 1px solid var(--border);
@@ -201,8 +189,8 @@
 }
 
 .appbar__btn {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   border: none;
@@ -213,7 +201,7 @@
 }
 .appbar__btn:hover,
 .appbar__btn[aria-expanded="true"] { background: var(--surface-sunken); color: var(--text); }
-.appbar__btn svg { width: 18px; height: 18px; }
+.appbar__btn svg { width: 20px; height: 20px; }
 
 .appbar__user {
   display: inline-flex;
@@ -468,11 +456,9 @@
 
 /* Laptops and small desktops: trim the frame so content keeps its width. */
 @media (max-width: 1180px) {
-  :root { --rail-width: 50px; }
-  .workarea__body { padding: var(--space-2); }
+  :root { --rail-width: 200px; }
+  .workarea__body { padding: var(--space-3); }
   .workarea__body--reading { padding: var(--space-3) var(--space-3); }
-  .navrail__item { width: 40px; min-height: 40px; }
-  .navrail__item::after { display: none; }
   .appbar__brand-name { font-size: var(--text-base); }
 }
 
@@ -510,7 +496,11 @@
     scrollbar-width: none;
   }
   .navrail::-webkit-scrollbar { display: none; }
-  .navrail__item { width: 44px; height: 44px; min-height: 44px; flex: 0 0 auto; padding: 0; }
+  .navrail__item {
+    width: 48px; height: 48px; min-height: 48px; flex: 0 0 auto;
+    padding: 0; justify-content: center;
+  }
+  .navrail__label,
   .navrail__item::after,
   .navrail__role, .navrail__spacer, .navrail__brand { display: none; }
   .navrail__item--active { box-shadow: none; background: rgba(20, 145, 138, 0.4); }
@@ -536,40 +526,40 @@
    explicitly chosen small or large still overrides the automatic step.
    ========================================================================== */
 
-@media (min-width: 1500px) {
+@media (min-width: 1280px) {
   :root {
-    --text-xs: 0.8125rem;
-    --text-sm: 0.875rem;
-    --text-base: 0.9375rem;
-    --text-md: 1.0625rem;
-    --text-lg: 1.1875rem;
-    --text-xl: 1.375rem;
-    --text-2xl: 1.625rem;
-    --text-3xl: 2rem;
+    --text-xs: 0.9375rem;
+    --text-sm: 1rem;
+    --text-base: 1.125rem;
+    --text-md: 1.25rem;
+    --text-lg: 1.4375rem;
+    --text-xl: 1.625rem;
+    --text-2xl: 2rem;
+    --text-3xl: 2.375rem;
 
-    --rail-width: 72px;
-    --appbar-height: 56px;
+    --rail-width: 248px;
+    --appbar-height: 64px;
     --tabsbar-height: 48px;
     --titlebar-height: 48px;
   }
 
-  .navrail__item { width: 48px; min-height: 48px; }
-  .navrail__item svg { width: 20px; height: 20px; }
-  .appbar__btn { width: 38px; height: 38px; }
-  .appbar__btn svg { width: 20px; height: 20px; }
-  .pagehead__icon, .titlebar__icon { width: 40px; height: 40px; }
-  .pagehead__icon svg, .titlebar__icon svg { width: 18px; height: 18px; }
+  .navrail__item { min-height: 48px; }
+  .navrail__item svg { width: 26px; height: 26px; }
+  .appbar__btn { width: 42px; height: 42px; }
+  .appbar__btn svg { width: 22px; height: 22px; }
+  .pagehead__icon, .titlebar__icon { width: 44px; height: 44px; }
+  .pagehead__icon svg, .titlebar__icon svg { width: 22px; height: 22px; }
 
-  .btn { height: 40px; }
-  .btn svg { width: 18px; height: 18px; }
-  .btn--sm { height: 34px; }
-  .btn--lg { height: 46px; }
-  .icon-btn { width: 38px; height: 38px; }
-  .icon-btn svg { width: 19px; height: 19px; }
-  .input, .select, .textarea { min-height: 42px; }
-  .chip { height: 25px; }
-  .avatar { width: 34px; height: 34px; }
-  .avatar--lg { width: 48px; height: 48px; }
+  .btn { height: 44px; }
+  .btn svg { width: 20px; height: 20px; }
+  .btn--sm { height: 36px; }
+  .btn--lg { height: 50px; }
+  .icon-btn { width: 42px; height: 42px; }
+  .icon-btn svg { width: 20px; height: 20px; }
+  .input, .select, .textarea { min-height: 46px; }
+  .chip { height: 28px; }
+  .avatar { width: 36px; height: 36px; }
+  .avatar--lg { width: 52px; height: 52px; }
 
 
   /* Choice tiles are the main content of the new-ticket page; at this width
@@ -577,19 +567,19 @@
   .choices--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
   .choices--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
   .choice { padding: var(--space-4) var(--space-5); }
-  .choice__icon { width: 40px; height: 40px; }
-  .choice__icon svg { width: 20px; height: 20px; }
+  .choice__icon { width: 44px; height: 44px; }
+  .choice__icon svg { width: 22px; height: 22px; }
 }
 
 @media (min-width: 1900px) {
   :root {
-    --text-base: 1rem;
-    --text-md: 1.125rem;
-    --text-lg: 1.25rem;
-    --text-2xl: 1.75rem;
-    --text-3xl: 2.25rem;
-    --rail-width: 76px;
+    --text-base: 1.1875rem;
+    --text-md: 1.3125rem;
+    --text-lg: 1.5rem;
+    --text-2xl: 2.125rem;
+    --text-3xl: 2.5rem;
+    --rail-width: 264px;
   }
-  .workarea__body { padding: var(--space-4); }
+  .workarea__body { padding: var(--space-5); }
   .workarea__body--reading { padding: var(--space-6) var(--space-5); }
 }
