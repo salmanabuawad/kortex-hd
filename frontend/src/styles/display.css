@@ -230,6 +230,16 @@
 }
 .ag-theme-kortex .ag-overlay-no-rows-wrapper { padding-top: var(--space-10); }
 
+/* Grid density on large displays. Declared here rather than in layout.css:
+   the base .ag-theme-kortex block lives in this file, and an equal-specificity
+   rule in an earlier stylesheet would lose the cascade. */
+@media (min-width: 1500px) {
+  .ag-theme-kortex { --ag-row-height: 50px; --ag-header-height: 46px; }
+}
+@media (min-width: 1900px) {
+  .ag-theme-kortex { --ag-row-height: 54px; --ag-header-height: 48px; }
+}
+
 [data-font-size="small"] .ag-theme-kortex {
   --ag-row-height: 36px;
   --ag-header-height: 34px;

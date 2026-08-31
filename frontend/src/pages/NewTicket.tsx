@@ -138,7 +138,7 @@ export default function NewTicket() {
         }
     >
 
-      <form onSubmit={submit} style={{ maxWidth: 820 }}>
+      <form onSubmit={submit}>
         <div className="stack">
           {error && <Banner tone="danger">{error}</Banner>}
 

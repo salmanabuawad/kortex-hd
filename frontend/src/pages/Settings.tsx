@@ -105,7 +105,7 @@ export default function Settings() {
       <Tabs tabs={TABS} active={tab} onChange={setTab} />
 
       {settings.loading ? <SkeletonRows rows={4} /> : (
-        <div style={{ maxWidth: 720 }}>
+        <div className="settings-panel">
           {fields && (
             <Card>
               <CardHeader title={TABS.find((t) => t.id === tab)?.label ?? ''} />

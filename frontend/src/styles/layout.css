@@ -203,7 +203,7 @@
 /* Document pages get a measure cap so text lines stay readable, but a generous
    one -- 1180px left a third of a 1600px monitor empty. */
 .workarea__body--reading {
-  max-width: 1440px;
+  max-width: 1680px;
   width: 100%;
   margin: 0 auto;
   gap: var(--space-4);
@@ -372,4 +372,74 @@
   .actionbar .toolbar__search { max-width: none; }
 
   .titlebar { border-radius: var(--radius-sm); }
+}
+
+/* ==========================================================================
+   Large displays
+
+   Council staff work on 24" monitors; at 1500px+ the default 14px base and
+   16px icons read as a page designed for a laptop and then stretched. This
+   tier grows type, controls, icons and grid rows together so density stays
+   constant rather than the interface just getting more empty space.
+
+   Declared before the data-font-size rules in display.css, so a user who has
+   explicitly chosen small or large still overrides the automatic step.
+   ========================================================================== */
+
+@media (min-width: 1500px) {
+  :root {
+    --text-xs: 0.8125rem;
+    --text-sm: 0.875rem;
+    --text-base: 0.9375rem;
+    --text-md: 1.0625rem;
+    --text-lg: 1.1875rem;
+    --text-xl: 1.375rem;
+    --text-2xl: 1.625rem;
+    --text-3xl: 2rem;
+
+    --rail-width: 64px;
+    --appbar-height: 54px;
+    --tabsbar-height: 48px;
+    --titlebar-height: 48px;
+  }
+
+  .navrail__item { width: 46px; height: 46px; }
+  .navrail__item svg { width: 21px; height: 21px; }
+  .appbar__btn { width: 38px; height: 38px; }
+  .appbar__btn svg { width: 20px; height: 20px; }
+  .titlebar__icon { width: 32px; height: 32px; }
+  .titlebar__icon svg { width: 18px; height: 18px; }
+
+  .btn { height: 40px; }
+  .btn svg { width: 18px; height: 18px; }
+  .btn--sm { height: 34px; }
+  .btn--lg { height: 46px; }
+  .icon-btn { width: 38px; height: 38px; }
+  .icon-btn svg { width: 19px; height: 19px; }
+  .input, .select, .textarea { min-height: 42px; }
+  .chip { height: 25px; }
+  .avatar { width: 34px; height: 34px; }
+  .avatar--lg { width: 48px; height: 48px; }
+
+
+  /* Choice tiles are the main content of the new-ticket page; at this width
+     they should fill the row rather than huddle at one end. */
+  .choices--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .choices--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .choice { padding: var(--space-4) var(--space-5); }
+  .choice__icon { width: 40px; height: 40px; }
+  .choice__icon svg { width: 20px; height: 20px; }
+}
+
+@media (min-width: 1900px) {
+  :root {
+    --text-base: 1rem;
+    --text-md: 1.125rem;
+    --text-lg: 1.25rem;
+    --text-2xl: 1.75rem;
+    --text-3xl: 2.25rem;
+    --rail-width: 68px;
+  }
+  .workarea__body { padding: var(--space-4); }
+  .workarea__body--reading { padding: var(--space-6) var(--space-5); }
 }

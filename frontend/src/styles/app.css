@@ -372,8 +372,10 @@
 /* Choice tiles: used for category and request-type pickers, so the new-ticket
    page reads as a set of decisions rather than a wall of dropdowns. */
 .choices { display: grid; gap: var(--space-3); }
-.choices--3 { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-.choices--2 { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+/* auto-fit, not auto-fill: empty tracks would leave the tiles bunched at one
+   end of a wide row instead of sharing the space. */
+.choices--3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.choices--2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 
 .choice {
   display: flex;
@@ -1226,3 +1228,7 @@ a.kpi:hover, button.kpi:hover { box-shadow: var(--shadow-md); border-color: var(
 /* Spinner used by Button loading state. */
 .spin { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Settings keeps a narrower measure than the page: these are labelled fields,
+   not a data view, and full-width inputs on a 24" monitor are unusable. */
+.settings-panel { max-width: 860px; }
