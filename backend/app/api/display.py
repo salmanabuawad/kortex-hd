@@ -24,6 +24,7 @@ KNOWN_GRIDS = {
     "tickets": "רשימת קריאות",
     "approvals": "אישורים",
     "directory": "משתמשים",
+    "knowledge": "פתרונות ותקלות ידועות",
     "subtasks": "משימות משנה",
 }
 
