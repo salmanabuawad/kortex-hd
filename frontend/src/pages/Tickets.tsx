@@ -79,7 +79,7 @@ export default function Tickets() {
         minWidth: 240,
         cellRenderer: (p: ICellRendererParams<TicketRow>) => (
           <span>
-            <span style={{ fontWeight: 600 }}>{p.value}</span>
+            <span className="grid-subject">{p.value}</span>
             {p.data?.approval_state === 'pending' && (
               <span className="chip chip--amber" style={{ marginInlineStart: 8 }}>
                 {t('approvalStatus.pending')}
@@ -97,12 +97,21 @@ export default function Tickets() {
         valueGetter: (p) => p.data?.request_type?.name ?? '—',
       },
       {
-        colId: 'requester', headerName: t('columns.requester'), width: 150,
+        colId: 'requester', headerName: t('columns.requester'), width: 160,
         valueGetter: (p) => p.data?.requester?.name ?? '—',
+        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
+          <span className="grid-person">
+            <span className="avatar avatar--sm avatar--muted">{p.data?.requester?.initials ?? '—'}</span>
+            <span className="cell-meta">{p.data?.requester?.name ?? '—'}</span>
+          </span>
+        ),
       },
       {
-        colId: 'resolver', headerName: t('columns.resolver'), width: 150,
+        colId: 'resolver', headerName: t('columns.resolver'), width: 160,
         valueGetter: (p) => p.data?.resolver?.name ?? t('common.unassigned'),
+        cellRenderer: (p: ICellRendererParams<TicketRow>) => (
+          <span className="cell-meta">{p.data?.resolver?.name ?? t('common.unassigned')}</span>
+        ),
       },
       {
         colId: 'priority', headerName: t('columns.priority'), width: 110,
@@ -174,6 +183,29 @@ export default function Tickets() {
               aria-label={t('nav.searchLabel')}
             />
           </div>
+
+          {staff && (
+            <button type="button" className="filter-chip" aria-pressed={scope === 'mine'}
+                    onClick={() => setParam('scope', scope === 'mine' ? '' : 'mine')}>
+              {t('nav.assignedToMe')}
+            </button>
+          )}
+          <button type="button" className="filter-chip" aria-pressed={status === 'open'}
+                  onClick={() => setParam('status', status === 'open' ? '' : 'open')}>
+            פתוחות
+          </button>
+          <button type="button" className="filter-chip" aria-pressed={status === 'in_progress'}
+                  onClick={() => setParam('status', status === 'in_progress' ? '' : 'in_progress')}>
+            בטיפול
+          </button>
+          <button type="button" className="filter-chip" aria-pressed={slaState === 'breached'}
+                  onClick={() => setParam('sla', slaState === 'breached' ? '' : 'breached')}>
+            {t('sla.breached')}
+          </button>
+          <button type="button" className="filter-chip" aria-pressed={status === 'resolved'}
+                  onClick={() => setParam('status', status === 'resolved' ? '' : 'resolved')}>
+            {t('status.resolved')}
+          </button>
 
           <select className="select" value={status} aria-label={t('columns.status')}
                   onChange={(event) => setParam('status', event.target.value)}>

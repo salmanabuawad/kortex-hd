@@ -1,37 +1,21 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, Clock, Inbox, LayoutDashboard, Plus, ShieldCheck,
-  TrendingUp,
+  AlertTriangle, ArrowLeft, LayoutDashboard, Plus, ShieldCheck,
 } from 'lucide-react';
 
 import { get } from '../lib/api';
 import { useAuth, isStaff } from '../lib/auth';
 import { useAsync } from '../lib/hooks';
 import { formatCurrency } from '../lib/format';
-import { statusLabel } from '../lib/labels';
 import type { DashboardData } from '../lib/types';
 import {
-  Card, CardHeader, EmptyState, ErrorState, SkeletonCards,
+  Button, Card, CardHeader, ErrorState, Skeleton,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
-import { TicketTable } from '../components/tickets';
+import { TicketQueue } from '../components/tickets';
 
-function Kpi({
-  value, label, icon, tone, to,
-}: {
-  value: number | string; label: string; icon: React.ReactNode;
-  tone: 'blue' | 'purple' | 'amber' | 'red' | 'green'; to?: string;
-}) {
-  const body = (
-    <>
-      <span className={`kpi__icon kpi__icon--${tone}`}>{icon}</span>
-      <span className="grow">
-        <span className="kpi__value num" style={{ display: 'block' }}>{value}</span>
-        <span className="kpi__label">{label}</span>
-      </span>
-    </>
-  );
-  return to ? <Link className="kpi" to={to}>{body}</Link> : <div className="kpi">{body}</div>;
+function countOf(data: DashboardData, status: string) {
+  return data.by_status.find((row) => row.status === status)?.count ?? 0;
 }
 
 export default function Dashboard() {
@@ -49,131 +33,81 @@ export default function Dashboard() {
     <PageFrame
       reading
       icon={<LayoutDashboard />}
-      title={`שלום, ${firstName}`}
-        summary={staff
-          ? 'מה דורש את תשומת הלב שלך כרגע'
-          : 'מצב הקריאות שפתחת'}
+      title={`שלום ${firstName}`}
+      summary={staff
+        ? 'הנה מה שדורש טיפול היום'
+        : 'מצב הקריאות שפתחת'}
+      actions={
+        <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/tickets/new')}>
+          פתיחת קריאה
+        </Button>
+      }
     >
-
-      {loading || !data ? <SkeletonCards count={4} /> : (
+      {loading || !data ? (
+        <div className="stack">
+          <Skeleton height={44} radius={10} />
+          <Skeleton height={180} radius={12} />
+        </div>
+      ) : (
         <>
-          <div className="grid grid--4" style={{ marginBottom: 'var(--space-4)' }}>
-            <Kpi
-              value={data.kpis.open} label="קריאות פתוחות" tone="blue"
-              icon={<Inbox />} to="/tickets?status=open"
-            />
-            {staff ? (
-              <Kpi
-                value={data.kpis.assigned_to_me} label="ממתינות לטיפולך" tone="purple"
-                icon={<Clock />} to="/tickets?scope=mine"
-              />
-            ) : (
-              <Kpi
-                value={data.kpis.resolved_total} label="קריאות שנפתרו" tone="green"
-                icon={<CheckCircle2 />}
-              />
+          <div className="ops" aria-label="סיכום תפעולי">
+            {staff && (
+              <Link className="ops__item" to="/tickets?scope=mine">
+                <span className="ops__value num">{data.kpis.assigned_to_me}</span>
+                <span className="ops__label">בטיפולי</span>
+              </Link>
             )}
-            <Kpi
-              value={data.kpis.waiting_approval} label="ממתין לאישור" tone="amber"
-              icon={<ShieldCheck />} to={staff ? '/approvals' : undefined}
-            />
-            <Kpi
-              value={data.kpis.overdue} label="חריגה מזמן תקן" tone="red"
-              icon={<AlertTriangle />} to="/tickets?sla=breached"
-            />
+            <Link className="ops__item" to="/tickets?status=new">
+              <span className="ops__value num">{countOf(data, 'new')}</span>
+              <span className="ops__label">חדשות</span>
+            </Link>
+            <Link className="ops__item" to="/tickets?status=in_progress">
+              <span className="ops__value num">{countOf(data, 'in_progress')}</span>
+              <span className="ops__label">בטיפול</span>
+            </Link>
+            <Link className="ops__item ops__item--warn" to={staff ? '/approvals' : '/tickets'}>
+              <span className="ops__value num">{data.kpis.waiting_approval}</span>
+              <span className="ops__label">ממתינות</span>
+            </Link>
+            <Link className="ops__item ops__item--risk" to="/tickets?sla=breached">
+              <span className="ops__value num">{data.kpis.overdue + data.kpis.at_risk}</span>
+              <span className="ops__label">סיכון זמן תקן</span>
+            </Link>
+            {!staff && (
+              <div className="ops__item">
+                <span className="ops__value num">{data.kpis.resolved_total}</span>
+                <span className="ops__label">נפתרו</span>
+              </div>
+            )}
           </div>
 
-          {data.needs_attention.length > 0 && (
-            <Card style={{ marginBottom: 'var(--space-4)' }}>
-              <CardHeader
-                title="דורש התייחסות עכשיו"
-                icon={<AlertTriangle size={17} style={{ color: 'var(--warning-text)' }} />}
-                action={
-                  <Link to="/tickets?sla=breached" className="btn btn--ghost btn--sm">
-                    הצגת הכל <ArrowLeft size={15} />
-                  </Link>
-                }
+          <Card>
+            <CardHeader
+              title="דורש את תשומת לבך"
+              icon={<AlertTriangle size={17} style={{ color: 'var(--warning-text)' }} />}
+              action={
+                <Link to="/tickets?sla=breached" className="btn btn--ghost btn--sm">
+                  הצגת הכל <ArrowLeft className="dir-icon" size={15} />
+                </Link>
+              }
+            />
+            <div className="card__body">
+              <TicketQueue
+                tickets={data.needs_attention}
+                emptyTitle="אין פריטים דחופים"
+                emptyText="אין קריאות שחורגות מזמן התקן או שממתינות להחלטה שלך."
               />
-              <div className="card__body card__body--flush">
-                <TicketTable tickets={data.needs_attention} showResolver={staff} />
-              </div>
-            </Card>
-          )}
-
-          <div className="grid grid--2" style={{ marginBottom: 'var(--space-4)' }}>
-            <Card>
-              <CardHeader title="קריאות לפי סטטוס" />
-              <div className="card__body">
-                {data.by_status.length === 0 ? (
-                  <EmptyState title="אין נתונים עדיין" />
-                ) : (
-                  <div className="bars">
-                    {data.by_status.map((row) => {
-                      const max = Math.max(...data.by_status.map((r) => r.count), 1);
-                      return (
-                        <div className="bar-row" key={row.status}>
-                          <span className="bar-row__label">{statusLabel[row.status]}</span>
-                          <span className="bar-row__track">
-                            <span
-                              className="bar-row__fill"
-                              style={{ width: `${(row.count / max) * 100}%` }}
-                            />
-                          </span>
-                          <span className="bar-row__value num">{row.count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            <Card>
-              <CardHeader
-                title="קריאות פתוחות לפי קטגוריה"
-                action={data.sla_rate !== null ? (
-                  <span className="chip chip--green">
-                    <TrendingUp size={12} /> עמידה בתקן {data.sla_rate}%
-                  </span>
-                ) : undefined}
-              />
-              <div className="card__body">
-                {data.by_category.length === 0 ? (
-                  <EmptyState title="אין קריאות פתוחות" />
-                ) : (
-                  <div className="bars">
-                    {data.by_category.map((row) => {
-                      const max = Math.max(...data.by_category.map((r) => r.count), 1);
-                      return (
-                        <div className="bar-row" key={row.category}>
-                          <span className="bar-row__label">{row.category}</span>
-                          <span className="bar-row__track">
-                            <span
-                              className="bar-row__fill"
-                              style={{
-                                width: `${(row.count / max) * 100}%`,
-                                background: 'var(--accent)',
-                              }}
-                            />
-                          </span>
-                          <span className="bar-row__value num">{row.count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
 
           {staff && data.approvals.length > 0 && (
-            <Card style={{ marginBottom: 'var(--space-4)' }}>
+            <Card>
               <CardHeader
-                title="אישורים הממתינים לך"
+                title="אישורים ממתינים"
                 icon={<ShieldCheck size={17} style={{ color: 'var(--warning-text)' }} />}
                 action={
                   <Link to="/approvals" className="btn btn--ghost btn--sm">
-                    לכל האישורים <ArrowLeft size={15} />
+                    לכל האישורים <ArrowLeft className="dir-icon" size={15} />
                   </Link>
                 }
               />
@@ -181,6 +115,7 @@ export default function Dashboard() {
                 {data.approvals.map((approval) => (
                   <button
                     key={approval.id}
+                    type="button"
                     className="work-item"
                     onClick={() => navigate(`/tickets/${approval.ticket_id}`)}
                   >
@@ -199,7 +134,7 @@ export default function Dashboard() {
                         )}
                       </span>
                     </span>
-                    <ArrowLeft size={16} style={{ color: 'var(--text-muted)' }} />
+                    <ArrowLeft className="dir-icon" size={16} style={{ color: 'var(--text-muted)' }} />
                   </button>
                 ))}
               </div>
@@ -211,14 +146,13 @@ export default function Dashboard() {
               title={staff ? 'עודכנו לאחרונה' : 'הקריאות האחרונות שלך'}
               action={
                 <Link to="/tickets" className="btn btn--ghost btn--sm">
-                  לכל הקריאות <ArrowLeft size={15} />
+                  לכל הקריאות <ArrowLeft className="dir-icon" size={15} />
                 </Link>
               }
             />
-            <div className="card__body card__body--flush">
-              <TicketTable
+            <div className="card__body">
+              <TicketQueue
                 tickets={data.recent}
-                showResolver={staff}
                 emptyTitle="אין קריאות פתוחות"
                 emptyText={staff
                   ? 'כל הקריאות טופלו. כשתיפתח קריאה חדשה היא תופיע כאן.'

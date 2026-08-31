@@ -3,13 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Activity, BarChart3, BookOpen, ClipboardList, Cog, HelpCircle, LayoutDashboard, LifeBuoy,
-  LogOut, Search, ShieldCheck, SlidersHorizontal, Table2, User, Users, Workflow,
+  LogOut, Search, ShieldCheck, SlidersHorizontal, Table2, Users, Workflow,
 } from 'lucide-react';
 
 import { isStaff, useAuth } from '../../lib/auth';
 import { useDisplay, useSyncDisplayPreferences } from '../../lib/display';
 import { LANGUAGE_NAMES, type Language } from '../../i18n';
 import type { Role } from '../../lib/types';
+import { Avatar } from '../ui';
 
 /* -------------------------------------------------------------------------- */
 /* Navigation model                                                            */
@@ -120,6 +121,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   const [menu, setMenu] = useState<'display' | 'user' | null>(null);
+  const [query, setQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   useSyncDisplayPreferences(!!user);
@@ -149,12 +151,14 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="app-frame">
       <nav className="navrail" aria-label={t('nav.groupWork')}>
+        <span className="navrail__brand" aria-hidden><LifeBuoy /></span>
         <span className="navrail__role">{t(`role.${user.role}`)}</span>
         {items.map((item) => (
           <button
             key={item.to}
             type="button"
             className={`navrail__item${isActive(item.to) ? ' navrail__item--active' : ''}`}
+            data-label={t(item.labelKey)}
             title={t(item.labelKey)}
             aria-label={t(item.labelKey)}
             aria-current={isActive(item.to) ? 'page' : undefined}
@@ -167,6 +171,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <button
           type="button"
           className="navrail__item"
+          data-label={t('nav.logout')}
           title={t('nav.logout')}
           aria-label={t('nav.logout')}
           onClick={() => { logout(); navigate('/login'); }}
@@ -178,23 +183,29 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="workarea">
         <header className="appbar">
           <span className="appbar__brand">
-            <LifeBuoy aria-hidden />
-            {t('app.name')}
-            {/* Dropped below 960px, where the bar has no room for both. */}
-            <span className="appbar__brand-council"> · {t('app.council')}</span>
+            <span className="appbar__brand-name">{t('app.name')}</span>
+            <span className="appbar__brand-council">{t('app.council')}</span>
           </span>
 
-          <span className="appbar__spacer" />
-
-          <button
-            type="button"
-            className="appbar__btn"
-            title={t('nav.search')}
-            aria-label={t('nav.searchLabel')}
-            onClick={() => navigate('/tickets')}
+          <form
+            className="appbar__search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const next = query.trim();
+              navigate(next ? `/tickets?q=${encodeURIComponent(next)}` : '/tickets');
+            }}
           >
-            <Search />
-          </button>
+            <Search aria-hidden />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('nav.search')}
+              aria-label={t('nav.searchLabel')}
+            />
+          </form>
+
+          <span className="appbar__spacer" />
 
           <div className="appbar__menu" ref={menu ? menuRef : undefined}>
             <button
@@ -210,16 +221,29 @@ export function Shell({ children }: { children: ReactNode }) {
             {menu === 'display' && <DisplayMenu onClose={() => setMenu(null)} />}
           </div>
 
+          <button
+            type="button"
+            className="appbar__btn"
+            title={t('nav.knowledge')}
+            aria-label={t('nav.knowledge')}
+            onClick={() => navigate(isStaff(user) ? '/knowledge' : '/tickets/new')}
+          >
+            <HelpCircle />
+          </button>
+
           <div className="appbar__menu">
             <button
               type="button"
-              className="appbar__btn"
+              className="appbar__user"
               title={user.full_name}
               aria-label={user.full_name}
               aria-expanded={menu === 'user'}
               onClick={() => setMenu(menu === 'user' ? null : 'user')}
             >
-              <User />
+              <Avatar initials={user.initials} size="sm" />
+              <span className="appbar__user-meta">
+                <span className="appbar__user-name">{user.full_name}</span>
+              </span>
             </button>
             {menu === 'user' && (
               <div className="settings-pop" role="dialog" aria-label={user.full_name}>
@@ -249,16 +273,6 @@ export function Shell({ children }: { children: ReactNode }) {
               </div>
             )}
           </div>
-
-          <button
-            type="button"
-            className="appbar__btn"
-            title={t('nav.knowledge')}
-            aria-label={t('nav.knowledge')}
-            onClick={() => navigate(isStaff(user) ? '/knowledge' : '/tickets/new')}
-          >
-            <HelpCircle />
-          </button>
         </header>
 
         {children}
@@ -322,12 +336,13 @@ export function PageFrame({
       )}
 
       <div className={`workarea__body${reading ? ' workarea__body--reading' : ''}`}>
-        <div className="titlebar">
-          {icon && <span className="titlebar__icon">{icon}</span>}
-          <span className="titlebar__title">{title}</span>
-          {summary && <span className="titlebar__summary">{summary}</span>}
-          <span className="titlebar__spacer" />
-        </div>
+        <header className="pagehead">
+          {icon && <span className="pagehead__icon">{icon}</span>}
+          <div className="pagehead__text">
+            <h1 className="pagehead__title">{title}</h1>
+            {summary && <p className="pagehead__summary">{summary}</p>}
+          </div>
+        </header>
 
         {banner}
 

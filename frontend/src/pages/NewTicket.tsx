@@ -130,9 +130,9 @@ export default function NewTicket() {
       reading
       icon={<Plus />}
       title="פתיחת קריאה חדשה"
-        summary="תארו את הבעיה או הבקשה, והפנייה תנותב אוטומטית לגורם המטפל"
+      summary="איך אפשר לעזור? בחרו קטגוריה ואז תארו את הבקשה"
         actions={
-          <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>
+          <Button variant="ghost" icon={<ArrowLeft className="dir-icon" size={16} />} onClick={() => navigate(-1)}>
             חזרה
           </Button>
         }
@@ -144,7 +144,7 @@ export default function NewTicket() {
 
           {/* Step 1 — category */}
           <Card>
-            <CardHeader title="1. במה מדובר?" />
+            <CardHeader title="במה מדובר?" />
             <div className="card__body">
               {categories.loading ? (
                 <div className="choices choices--3">
@@ -181,7 +181,7 @@ export default function NewTicket() {
           {/* Step 2 — request type, only once a category is chosen */}
           {category && category.request_types.length > 0 && (
             <Card>
-              <CardHeader title="2. סוג הפנייה" />
+                <CardHeader title="סוג הפנייה" />
               <div className="card__body">
                 <div className="choices choices--2">
                   {category.request_types.map((type: RequestType) => (
@@ -227,7 +227,7 @@ export default function NewTicket() {
           {/* Step 3 — the details */}
           {categoryId && (
             <Card>
-              <CardHeader title="3. פרטי הפנייה" />
+              <CardHeader title="פרטי הפנייה" />
               <div className="card__body stack">
                 <TextField
                   label="נושא" required maxLength={220}

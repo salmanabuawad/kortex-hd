@@ -1,15 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle2, Eye, EyeOff, LifeBuoy, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LifeBuoy, LogIn } from 'lucide-react';
 
 import { useAuth } from '../lib/auth';
 import { Banner, Button, TextField } from '../components/ui';
-
-const POINTS = [
-  'פתיחת קריאות ומעקב אחר הטיפול בהן',
-  'ניתוב אוטומטי לגורם המטפל לפי קטגוריה',
-  'אישורים, משימות משנה וספקים חיצוניים במקום אחד',
-];
 
 export default function Login() {
   const { user, login, loading } = useAuth();
@@ -44,39 +38,19 @@ export default function Login() {
 
   return (
     <div className="login">
-      <aside className="login__aside">
-        <div className="login__ridge" aria-hidden />
-
-        <div className="login__brand">
-          <span className="sidebar__mark"><LifeBuoy size={20} /></span>
-          <div>
-            <div className="sidebar__title">מוקד שירות</div>
-            <div className="sidebar__subtitle">מועצה מקומית בוקעאתא</div>
-          </div>
-        </div>
-
-        <div className="login__lead">
-          <h2>מערכת פניות ושירות לעובדי המועצה</h2>
-          <p>
-            כל הפניות, המשימות והאישורים במקום אחד — עם מעקב מלא אחר כל שלב בטיפול.
-          </p>
-        </div>
-
-        <div className="login__points">
-          {POINTS.map((point) => (
-            <div className="login__point" key={point}>
-              <CheckCircle2 aria-hidden />
-              <span>{point}</span>
-            </div>
-          ))}
-        </div>
-      </aside>
-
       <main className="login__main">
         <div className="login__card">
+          <div className="login__brand-block">
+            <span className="login__mark"><LifeBuoy size={20} /></span>
+            <div>
+              <div className="appbar__brand-name">מוקד שירות</div>
+              <div className="appbar__brand-council">מועצה מקומית בוקעאתא</div>
+            </div>
+          </div>
+
           <h1 className="login__title">כניסה למערכת</h1>
           <p className="login__sub">
-            הכניסה מיועדת לעובדי המועצה הרשומים בלבד.
+            מערכת פניות פנימית לעובדי המועצה.
           </p>
 
           {error && (

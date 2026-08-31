@@ -187,7 +187,7 @@ export default function Approvals() {
                       </span>
                     )}
                     <Button variant="ghost" onClick={() => navigate(`/tickets/${approval.ticket_id}`)}>
-                      פתיחת הקריאה <ArrowLeft size={15} />
+                      פתיחת הקריאה <ArrowLeft className="dir-icon" size={15} />
                     </Button>
                   </div>
                 </div>

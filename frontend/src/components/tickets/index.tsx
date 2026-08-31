@@ -90,6 +90,63 @@ export function LifecycleRail({ status }: { status: TicketStatus }) {
 /* Ticket table                                                                */
 /* -------------------------------------------------------------------------- */
 
+export function TicketQueue({
+  tickets, loading, emptyTitle, emptyText, emptyAction,
+}: {
+  tickets: TicketRow[];
+  loading?: boolean;
+  emptyTitle?: string;
+  emptyText?: string;
+  emptyAction?: React.ReactNode;
+}) {
+  const navigate = useNavigate();
+
+  if (loading) return <SkeletonRows rows={5} />;
+  if (!tickets.length) {
+    return (
+      <EmptyState
+        title={emptyTitle ?? 'אין קריאות להצגה'}
+        text={emptyText}
+        action={emptyAction}
+      />
+    );
+  }
+
+  return (
+    <div className="queue">
+      {tickets.map((ticket) => (
+        <button
+          type="button"
+          className="queue-item"
+          key={ticket.id}
+          onClick={() => navigate(`/tickets/${ticket.id}`)}
+          aria-label={`קריאה ${ticket.number}: ${ticket.subject}`}
+        >
+          <span className="queue-item__num num">{ticket.number}</span>
+          <span>
+            <span className="queue-item__subject">{ticket.subject}</span>
+            <span className="queue-item__meta">
+              <span>{ticket.requester?.name ?? '—'}</span>
+              {ticket.category?.name && <span>{ticket.category.name}</span>}
+              {ticket.resolver?.name && <span>{ticket.resolver.name}</span>}
+              <span>{relativeTime(ticket.updated_at)}</span>
+            </span>
+          </span>
+          <span className="queue-item__flags">
+            <StatusChip status={ticket.status} />
+            {(ticket.priority === 'high' || ticket.priority === 'urgent'
+              || ticket.sla_state === 'breached' || ticket.sla_state === 'at_risk') && (
+              ticket.sla_state === 'breached' || ticket.sla_state === 'at_risk'
+                ? <SlaChip state={ticket.sla_state} minutes={ticket.sla_minutes_remaining} />
+                : <PriorityChip priority={ticket.priority} />
+            )}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function TicketTable({
   tickets, loading, showResolver = true, emptyTitle, emptyText, emptyAction,
 }: {

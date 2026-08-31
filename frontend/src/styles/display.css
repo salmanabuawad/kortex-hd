@@ -61,10 +61,11 @@
    and no reliance on a subtle background to separate surfaces. */
 
 [data-contrast="light"] {
-  --app-bg: #ffffff;
-  --surface-muted: #fcfdfe;
-  --surface-sunken: #f5f8fa;
-  --border: #e8edf2;
+  --app-bg: #faf8f4;
+  --surface-subtle: #f4f1ec;
+  --surface-muted: #f4f1ec;
+  --surface-sunken: #eeeae3;
+  --border: #e8e4dc;
 }
 
 [data-contrast="dark"] {
@@ -205,9 +206,9 @@
   --ag-row-border-color: var(--border);
   --ag-header-column-separator-display: none;
   --ag-borders: none;
-  --ag-row-height: 44px;
-  --ag-header-height: 40px;
-  --ag-cell-horizontal-padding: 16px;
+  --ag-row-height: 52px;
+  --ag-header-height: 42px;
+  --ag-cell-horizontal-padding: 18px;
   --ag-grid-size: 5px;
   --ag-wrapper-border-radius: 0;
 }
@@ -215,13 +216,16 @@
 .ag-theme-kortex .ag-header {
   border-bottom: 1px solid var(--border);
   font-weight: 600;
+  background: var(--surface-subtle);
 }
 .ag-theme-kortex .ag-header-cell-text {
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-muted);
+  letter-spacing: 0.02em;
 }
-.ag-theme-kortex .ag-row { cursor: pointer; }
+.ag-theme-kortex .ag-row { cursor: pointer; border-bottom-color: var(--border); }
+.ag-theme-kortex .ag-row-hover { background: var(--surface-subtle); }
 .ag-theme-kortex .ag-row-focus { background: var(--primary-soft); }
 .ag-theme-kortex .ag-cell {
   display: flex;

@@ -2,65 +2,79 @@
    from here -- components never hard-code a hex value. */
 
 :root {
-  /* --- palette ---------------------------------------------------------- */
-  --navy-900: #0b1220;
-  --navy-800: #0f172a;
-  --navy-700: #16213a;
-  --navy-600: #1e293b;
-  --navy-500: #334155;
+  /* --- palette: restrained municipal forest / teal ------------------------ */
+  --forest-950: #0c1c18;
+  --forest-900: #12241f;
+  --forest-800: #17302a;
+  --forest-700: #1e3d35;
+  --forest-600: #275248;
 
-  --blue-600: #1d4ed8;
-  --blue-500: #2563eb;
-  --blue-400: #3b82f6;
-  --blue-100: #dbeafe;
-  --blue-50:  #eff6ff;
+  --teal-800: #0f5c56;
+  --teal-700: #0f766e;
+  --teal-600: #0d8a80;
+  --teal-500: #14918a;
+  --teal-100: #d5efec;
+  --teal-50:  #eef8f6;
 
-  --purple-600: #7c3aed;
-  --purple-100: #ede9fe;
+  --navy-900: #0c1c18;
+  --navy-800: #12241f;
+  --navy-700: #17302a;
+  --navy-600: #1e3d35;
+  --navy-500: #275248;
 
-  --green-600: #047857;
-  --green-500: #059669;
-  --green-100: #d1fae5;
+  --blue-600: var(--teal-800);
+  --blue-500: var(--teal-700);
+  --blue-400: var(--teal-500);
+  --blue-100: var(--teal-100);
+  --blue-50:  var(--teal-50);
 
-  --amber-600: #b45309;
-  --amber-500: #d97706;
-  --amber-100: #fef3c7;
+  --purple-600: #5b6472;
+  --purple-100: #eceef1;
 
-  --red-600: #b91c1c;
-  --red-500: #dc2626;
-  --red-100: #fee2e2;
+  --green-600: #176b45;
+  --green-500: #1a7f52;
+  --green-100: #dcefe4;
 
-  --slate-900: #0f172a;
-  --slate-700: #334155;
-  --slate-600: #475569;
-  --slate-500: #64748b;
-  --slate-400: #94a3b8;
-  --slate-300: #cbd5e1;
-  --slate-200: #e2e8f0;
-  --slate-100: #f1f5f9;
-  --slate-50:  #f8fafc;
+  --amber-600: #9a6700;
+  --amber-500: #b45309;
+  --amber-100: #f8edd6;
+
+  --red-600: #b42318;
+  --red-500: #c9372c;
+  --red-100: #f8e4e1;
+
+  --slate-900: #1c1917;
+  --slate-700: #3f3a36;
+  --slate-600: #57534e;
+  --slate-500: #78716c;
+  --slate-400: #a8a29e;
+  --slate-300: #d6d3d1;
+  --slate-200: #e7e5e4;
+  --slate-100: #f3f1ee;
+  --slate-50:  #f7f5f2;
 
   /* --- semantic --------------------------------------------------------- */
-  --app-bg: #f6f8fb;
-  --surface: #ffffff;
-  --surface-muted: var(--slate-50);
-  --surface-sunken: var(--slate-100);
+  --app-bg: #f4f1ec;
+  --surface: #fffcf8;
+  --surface-subtle: #f7f5f1;
+  --surface-muted: var(--surface-subtle);
+  --surface-sunken: #efece6;
 
-  --text: var(--slate-900);
-  --text-secondary: var(--slate-600);
-  --text-muted: var(--slate-500);
+  --text: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #78716c;
   --text-inverse: #ffffff;
 
-  --border: var(--slate-200);
-  --border-strong: var(--slate-300);
+  --border: #e4e0d9;
+  --border-strong: #d0cbc3;
 
-  --primary: var(--blue-500);
-  --primary-hover: var(--blue-600);
-  --primary-soft: var(--blue-50);
-  --primary-border: var(--blue-100);
+  --primary: var(--teal-700);
+  --primary-hover: var(--teal-800);
+  --primary-soft: var(--teal-50);
+  --primary-border: var(--teal-100);
 
-  --accent: var(--purple-600);
-  --accent-soft: var(--purple-100);
+  --accent: var(--teal-600);
+  --accent-soft: var(--teal-50);
 
   --success: var(--green-500);
   --success-soft: var(--green-100);
@@ -74,11 +88,11 @@
   --danger-soft: var(--red-100);
   --danger-text: var(--red-600);
 
-  --shell-bg: var(--navy-800);
-  --shell-bg-hover: var(--navy-600);
-  --shell-text: #cbd5e1;
+  --shell-bg: var(--forest-900);
+  --shell-bg-hover: var(--forest-700);
+  --shell-text: #c5d4cf;
   --shell-text-active: #ffffff;
-  --shell-border: rgba(148, 163, 184, 0.16);
+  --shell-border: rgba(197, 212, 207, 0.14);
 
   /* --- typography ------------------------------------------------------- */
   --font: "Assistant", "Heebo", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -96,6 +110,11 @@
   --leading-tight: 1.25;
   --leading-normal: 1.55;
 
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
   /* --- spacing ---------------------------------------------------------- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -107,52 +126,52 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
 
-  /* --- radii ------------------------------------------------------------ */
+  /* --- radii: 8–14px for work UI ---------------------------------------- */
   --radius-sm: 6px;
   --radius: 8px;
   --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
   --radius-pill: 999px;
 
-  /* --- shadows ---------------------------------------------------------- */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12), 0 4px 8px rgba(15, 23, 42, 0.06);
-  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  /* --- shadows: used sparingly ------------------------------------------ */
+  --shadow-xs: none;
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+  --shadow-md: 0 4px 14px rgba(28, 25, 23, 0.06);
+  --shadow-lg: 0 12px 28px rgba(28, 25, 23, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(15, 118, 110, 0.22);
 
   /* --- layout ----------------------------------------------------------- */
   --sidebar-width: 250px;
-  --header-height: 60px;
+  --header-height: 56px;
   --content-max: 1440px;
 
-  --transition: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Status colours, referenced by name so a chip can be driven from data. */
+/* Status colours: quiet by default; semantic fill only when it means something. */
 :root {
-  --status-new-bg: var(--slate-100);
-  --status-new-fg: var(--slate-700);
-  --status-assigned-bg: var(--blue-50);
-  --status-assigned-fg: var(--blue-600);
-  --status-viewed-bg: #e0e7ff;
-  --status-viewed-fg: #4338ca;
-  --status-in_progress-bg: var(--purple-100);
-  --status-in_progress-fg: var(--purple-600);
-  --status-resolved-bg: var(--green-100);
-  --status-resolved-fg: var(--green-600);
-  --status-rejected-bg: var(--red-100);
-  --status-rejected-fg: var(--red-600);
-  --status-reopened-bg: var(--amber-100);
-  --status-reopened-fg: var(--amber-600);
+  --status-new-bg: transparent;
+  --status-new-fg: var(--text-secondary);
+  --status-assigned-bg: transparent;
+  --status-assigned-fg: var(--primary);
+  --status-viewed-bg: transparent;
+  --status-viewed-fg: var(--text-secondary);
+  --status-in_progress-bg: var(--primary-soft);
+  --status-in_progress-fg: var(--primary);
+  --status-resolved-bg: var(--success-soft);
+  --status-resolved-fg: var(--success-text);
+  --status-rejected-bg: var(--danger-soft);
+  --status-rejected-fg: var(--danger-text);
+  --status-reopened-bg: var(--warning-soft);
+  --status-reopened-fg: var(--warning-text);
 
-  --priority-low-bg: var(--slate-100);
-  --priority-low-fg: var(--slate-600);
-  --priority-normal-bg: var(--blue-50);
-  --priority-normal-fg: var(--blue-600);
-  --priority-high-bg: var(--amber-100);
-  --priority-high-fg: var(--amber-600);
-  --priority-urgent-bg: var(--red-100);
-  --priority-urgent-fg: var(--red-600);
+  --priority-low-bg: transparent;
+  --priority-low-fg: var(--text-muted);
+  --priority-normal-bg: transparent;
+  --priority-normal-fg: var(--text-secondary);
+  --priority-high-bg: var(--warning-soft);
+  --priority-high-fg: var(--warning-text);
+  --priority-urgent-bg: var(--danger-soft);
+  --priority-urgent-fg: var(--danger-text);
 }

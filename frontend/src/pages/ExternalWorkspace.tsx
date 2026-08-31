@@ -107,7 +107,7 @@ export default function ExternalWorkspace() {
       <GuestBar
         right={
           <>
-            <span className="cell-number" style={{ color: '#cbd5e1' }}>{subtask.number}</span>
+            <span className="cell-number">{subtask.number}</span>
             <Chip tone={subtaskStatusTone[subtask.status]} dot>
               {subtaskStatusLabel[subtask.status]}
             </Chip>
@@ -275,10 +275,10 @@ function GuestBar({ right }: { right?: React.ReactNode }) {
   return (
     <header className="guest__bar">
       <div className="guest__bar-inner">
-        <span className="sidebar__mark"><LifeBuoy size={18} /></span>
+        <span className="login__mark"><LifeBuoy size={18} /></span>
         <div className="grow">
-          <div className="sidebar__title">מוקד שירות</div>
-          <div className="sidebar__subtitle">{COUNCIL}</div>
+          <div className="appbar__brand-name">משימה לטיפול</div>
+          <div className="appbar__brand-council">{COUNCIL}</div>
         </div>
         {right}
       </div>

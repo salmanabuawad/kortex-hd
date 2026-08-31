@@ -53,27 +53,15 @@ export default function ChangePassword() {
 
   return (
     <div className="login">
-      <aside className="login__aside">
-        <div className="login__ridge" aria-hidden />
-        <div className="login__brand">
-          <span className="sidebar__mark"><LifeBuoy size={20} /></span>
-          <div>
-            <div className="sidebar__title">מוקד שירות</div>
-            <div className="sidebar__subtitle">מועצה מקומית בוקעאתא</div>
-          </div>
-        </div>
-        <div className="login__lead">
-          <h2>אבטחת החשבון שלך</h2>
-          <p>
-            סיסמה אישית שאינה ידועה לאיש אחר היא הדרך היחידה לוודא שפעולות שבוצעו
-            בחשבון שלך אכן בוצעו על ידך.
-          </p>
-        </div>
-        <div />
-      </aside>
-
       <main className="login__main">
         <div className="login__card">
+          <div className="login__brand-block">
+            <span className="login__mark"><LifeBuoy size={20} /></span>
+            <div>
+              <div className="appbar__brand-name">מוקד שירות</div>
+              <div className="appbar__brand-council">מועצה מקומית בוקעאתא</div>
+            </div>
+          </div>
           <h1 className="login__title">
             {forced ? 'בחירת סיסמה חדשה' : 'החלפת סיסמה'}
           </h1>

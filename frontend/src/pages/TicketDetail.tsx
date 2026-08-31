@@ -41,6 +41,7 @@ export default function TicketDetail() {
   const staff = isStaff(user);
 
   const [tab, setTab] = useState<TabId>('overview');
+  const [composeInternal, setComposeInternal] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [subtaskOpen, setSubtaskOpen] = useState(false);
   const [resolveOpen, setResolveOpen] = useState(false);
@@ -95,7 +96,7 @@ export default function TicketDetail() {
 
   return (
     <div className="workarea__body workarea__body--reading">
-      <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate('/tickets')}
+      <Button variant="ghost" icon={<ArrowLeft className="dir-icon" size={16} />} onClick={() => navigate('/tickets')}
               style={{ marginBottom: 'var(--space-3)' }}>
         חזרה לרשימת הקריאות
       </Button>
@@ -125,6 +126,14 @@ export default function TicketDetail() {
 
           {canWork && !closed && (
             <div className="ticket-header__actions">
+              <Button variant="primary" icon={<MessageSquare size={16} />}
+                      onClick={() => { setComposeInternal(false); setTab('activity'); }}>
+                תגובה למבקש
+              </Button>
+              <Button variant="secondary" icon={<MessageSquare size={16} />}
+                      onClick={() => { setComposeInternal(true); setTab('activity'); }}>
+                הערה פנימית
+              </Button>
               <Button variant="secondary" icon={<ArrowRightLeft size={16} />}
                       onClick={() => setTransferOpen(true)}>
                 העברה
@@ -206,6 +215,7 @@ export default function TicketDetail() {
         <ActivityTab
           ticketId={ticketId} items={activity.data?.items ?? []}
           loading={activity.loading} staff={staff}
+          internal={composeInternal} onInternalChange={setComposeInternal}
           onPosted={() => { activity.reload(); ticket.reload(); }}
         />
       )}
@@ -337,7 +347,7 @@ function OverviewTab({
               action={
                 <Button size="sm" variant="ghost" onClick={onSeeSubtasks}>
                   {openSubtasks > 0 ? `${openSubtasks} פתוחות` : 'הצגה'}
-                  <ArrowLeft size={14} />
+                  <ArrowLeft className="dir-icon" size={14} />
                 </Button>
               }
             />
@@ -359,7 +369,7 @@ function OverviewTab({
         )}
       </div>
 
-      <div className="stack">
+      <div className="stack detail-aside">
         <Card>
           <div className="card__body">
             <div className={`sla-card sla-card--${ticket.sla_state}`}>
@@ -477,13 +487,13 @@ function OverviewTab({
 /* -------------------------------------------------------------------------- */
 
 function ActivityTab({
-  ticketId, items, loading, staff, onPosted,
+  ticketId, items, loading, staff, internal, onInternalChange, onPosted,
 }: {
   ticketId: number; items: ActivityItem[]; loading: boolean;
-  staff: boolean; onPosted: () => void;
+  staff: boolean; internal: boolean; onInternalChange: (value: boolean) => void;
+  onPosted: () => void;
 }) {
   const [body, setBody] = useState('');
-  const [internal, setInternal] = useState(false);
   const { busy, run } = useAction();
   const toast = useToast();
 
@@ -510,15 +520,15 @@ function ActivityTab({
             </div>
           )}
 
-          <div className="composer">
+          <div className={`composer${internal ? ' composer--note' : ''}`}>
             {staff && (
               <div className="composer__tabs" role="group" aria-label="סוג התגובה">
                 <button type="button" className="composer__tab" aria-pressed={!internal}
-                        onClick={() => setInternal(false)}>
-                  תגובה לפונה
+                        onClick={() => onInternalChange(false)}>
+                  תגובה למבקש
                 </button>
                 <button type="button" className="composer__tab" aria-pressed={internal}
-                        onClick={() => setInternal(true)}>
+                        onClick={() => onInternalChange(true)}>
                   הערה פנימית
                 </button>
               </div>

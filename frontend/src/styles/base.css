@@ -39,7 +39,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border-radius: var(--radius-sm);
 }
 
-::selection { background: var(--blue-100); }
+::selection { background: var(--primary-soft); }
+
+[dir="rtl"] .dir-icon { transform: scaleX(-1); }
 
 /* --- RTL helpers ---------------------------------------------------------
    Values that must stay left-to-right inside a right-to-left page: ticket
