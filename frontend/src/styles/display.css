@@ -191,7 +191,7 @@
   background: var(--surface);
 }
 
-.ag-theme-kortex {
+.ag-theme-quartz.ag-theme-kortex {
   --ag-font-family: var(--font);
   --ag-font-size: var(--text-base);
   --ag-background-color: var(--surface);
@@ -234,25 +234,25 @@
    the base .ag-theme-kortex block lives in this file, and an equal-specificity
    rule in an earlier stylesheet would lose the cascade. */
 @media (min-width: 1500px) {
-  .ag-theme-kortex { --ag-row-height: 50px; --ag-header-height: 46px; }
+  .ag-theme-quartz.ag-theme-kortex { --ag-row-height: 50px; --ag-header-height: 46px; }
 }
 @media (min-width: 1900px) {
-  .ag-theme-kortex { --ag-row-height: 54px; --ag-header-height: 48px; }
+  .ag-theme-quartz.ag-theme-kortex { --ag-row-height: 54px; --ag-header-height: 48px; }
 }
 
-[data-font-size="small"] .ag-theme-kortex {
+[data-font-size="small"] .ag-theme-quartz.ag-theme-kortex {
   --ag-row-height: 36px;
   --ag-header-height: 34px;
   --ag-cell-horizontal-padding: 12px;
 }
-[data-font-size="large"] .ag-theme-kortex {
+[data-font-size="large"] .ag-theme-quartz.ag-theme-kortex {
   --ag-row-height: 60px;
   --ag-header-height: 54px;
   --ag-cell-horizontal-padding: 22px;
 }
 [data-font-size="large"] .ag-theme-kortex .ag-header-cell-text { font-size: var(--text-sm); }
 
-[data-contrast="contrast"] .ag-theme-kortex {
+[data-contrast="contrast"] .ag-theme-quartz.ag-theme-kortex {
   --ag-border-color: #000000;
   --ag-row-border-color: #000000;
   --ag-header-background-color: #f2f2f2;

@@ -2,9 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgGridReact } from 'ag-grid-react';
 import {
-  AllCommunityModule, ModuleRegistry, themeAlpine,
+  AllCommunityModule, ModuleRegistry,
   type ColDef, type GridApi, type GridReadyEvent,
 } from 'ag-grid-community';
+
+// The v34 Theming API and the legacy ag-theme-* classes are mutually exclusive.
+// Mixing them left AG Grid's own header logic half-initialised and it rendered
+// every column label with visibility:hidden. We use the legacy CSS themes,
+// because the whole visual definition here is driven by --ag-* variables that
+// map onto our design tokens.
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { RotateCcw, Save } from 'lucide-react';
 
 import { del, get, put } from '../../lib/api';
@@ -13,10 +21,6 @@ import { Button } from '../ui';
 import { useToast } from '../ui/toast';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
-
-/** AG Grid 34 wants a theming API object; we keep the visual definition in CSS
- *  so it follows the design tokens, and disable the built-in stylesheet. */
-export const kortexTheme = themeAlpine.withParams({});
 
 export interface FieldConfig {
   field_name: string;
@@ -78,11 +82,15 @@ export function useConfiguredColumns<T>(
         if (!config.visible) return null;
 
         const label = labelFor(config, i18n.language);
+        const width = widthFromChars(config.width_chars, config.padding, scale);
         return {
           column: {
             ...column,
             headerName: label ?? column.headerName,
-            width: widthFromChars(config.width_chars, config.padding, scale),
+            // Keep the configured width as a floor and let a flex column take
+            // the remaining space, so the table fills the viewport instead of
+            // leaving a dead gutter at the end.
+            ...(column.flex ? { flex: column.flex, minWidth: width } : { width }),
             pinned: config.pinned ? (config.pin_side ?? 'right') : undefined,
           } as ColDef<T>,
           order: config.column_order,
@@ -131,33 +139,56 @@ export function DataGrid<T extends object>({
     minWidth: 80,
   }), []);
 
+  // True once the user has a saved layout: their widths win from then on, and
+  // we stop auto-fitting over the top of them.
+  const hasOwnLayout = useRef(false);
+
+  /** Configured widths rarely add up to the viewport exactly, which left a dead
+   *  strip at the end of the table. Stretch to fill unless the user has saved
+   *  a layout of their own. minWidth on each column is respected, so the
+   *  administrator's widths still act as floors. */
+  const fitColumns = useCallback(() => {
+    const api = apiRef.current;
+    if (!api || hasOwnLayout.current) return;
+    api.sizeColumnsToFit();
+  }, []);
+
   // Restore the user's own column state once the grid exists.
   const onGridReady = useCallback((event: GridReadyEvent<T>) => {
     apiRef.current = event.api;
     void get<{ state: unknown }>(`/grid-preferences/${gridName}`)
       .then((saved) => {
         if (Array.isArray(saved.state) && saved.state.length) {
+          hasOwnLayout.current = true;
           event.api.applyColumnState({
             state: saved.state as never,
             applyOrder: true,
           });
+        } else {
+          event.api.sizeColumnsToFit();
         }
       })
-      .catch(() => undefined);
+      .catch(() => event.api.sizeColumnsToFit());
   }, [gridName]);
 
   const saveLayout = useCallback(() => {
     const api = apiRef.current;
     if (!api) return;
     void put(`/grid-preferences/${gridName}`, { state: api.getColumnState() })
-      .then(() => { setDirty(false); toast.success(t('grid.layoutSaved')); })
+      .then(() => {
+        hasOwnLayout.current = true;
+        setDirty(false);
+        toast.success(t('grid.layoutSaved'));
+      })
       .catch(() => toast.error(t('common.errorTitle')));
   }, [gridName, t, toast]);
 
   const resetLayout = useCallback(() => {
     void del(`/grid-preferences/${gridName}`)
       .then(() => {
+        hasOwnLayout.current = false;
         apiRef.current?.resetColumnState();
+        apiRef.current?.sizeColumnsToFit();
         setDirty(false);
         toast.success(t('grid.layoutReset'));
       })
@@ -171,12 +202,13 @@ export function DataGrid<T extends object>({
   return (
     <div className="gridarea">
       <div
-        className="ag-theme-kortex"
+        className="ag-theme-quartz ag-theme-kortex"
         style={{ height: height ?? undefined, flex: height ? undefined : 1, width: '100%' }}
       >
         <AgGridReact<T>
           key={gridKey}
-          theme={kortexTheme}
+          /* legacy = use the imported CSS themes, not the v34 Theming API */
+          theme="legacy"
           rowData={rows}
           columnDefs={configured}
           defaultColDef={defaultColDef}
@@ -185,6 +217,8 @@ export function DataGrid<T extends object>({
           headerHeight={undefined}
           getRowId={getRowId ? (params) => getRowId(params.data) : undefined}
           onGridReady={onGridReady}
+          onGridSizeChanged={fitColumns}
+          onFirstDataRendered={fitColumns}
           onColumnMoved={() => setDirty(true)}
           onColumnResized={(event) => { if (event.finished && event.source !== 'gridInitializing') setDirty(true); }}
           onColumnVisible={() => setDirty(true)}
