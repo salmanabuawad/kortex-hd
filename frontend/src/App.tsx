@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 import { AuthProvider, RequireAuth, RequireRole } from './lib/auth';
+import { DisplayProvider } from './lib/display';
 import { Shell } from './components/layout/Shell';
 import { ToastProvider } from './components/ui/toast';
 import { Button, DeniedState, EmptyState } from './components/ui';
@@ -21,6 +22,7 @@ import Settings from './pages/Settings';
 import Health from './pages/Health';
 import Knowledge from './pages/Knowledge';
 import ExternalWorkspace from './pages/ExternalWorkspace';
+import FieldConfigPage from './pages/FieldConfig';
 
 /** Catches render-time failures so a broken page shows a message instead of a
  *  blank white screen. */
@@ -75,6 +77,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
+        <DisplayProvider>
         <AuthProvider>
           <Routes>
             {/* Public */}
@@ -102,20 +105,29 @@ export default function App() {
             <Route path="/analytics" element={adminOnly(<Analytics />)} />
             <Route path="/settings" element={adminOnly(<Settings />)} />
             <Route path="/health" element={adminOnly(<Health />)} />
+            <Route path="/field-config" element={adminOnly(<FieldConfigPage />)} />
 
-            <Route path="/denied" element={inShell(<DeniedState />)} />
+            <Route
+              path="/denied"
+              element={inShell(
+                <div className="workarea__body workarea__body--reading"><DeniedState /></div>,
+              )}
+            />
             <Route
               path="*"
               element={inShell(
+                <div className="workarea__body workarea__body--reading">
                 <EmptyState
                   title="העמוד לא נמצא"
                   text="ייתכן שהקישור שגוי או שהעמוד הוסר."
                   action={<a className="btn btn--primary" href="/">חזרה ללוח הבקרה</a>}
-                />,
+                />
+                </div>,
               )}
             />
           </Routes>
         </AuthProvider>
+        </DisplayProvider>
       </ToastProvider>
     </BrowserRouter>
   );

@@ -3,7 +3,8 @@ cross-referencing, so splitting it buys indirection rather than clarity."""
 from datetime import date, datetime
 
 from sqlalchemy import (
-    Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, func,
+    Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text,
+    UniqueConstraint, func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -363,3 +364,58 @@ class KnownIssue(Base):
     created_at: Mapped[datetime] = _created()
 
     category = relationship("Category", lazy="joined")
+
+
+class FieldConfiguration(Base):
+    """Per-grid, per-column presentation, editable by an administrator.
+
+    One row per (grid, field). Labels are stored per language rather than as an
+    i18n key so a council administrator can rename a column in the UI without a
+    code change; an empty label falls back to the built-in translation.
+    """
+    __tablename__ = "field_configurations"
+    __table_args__ = (UniqueConstraint("grid_name", "field_name", name="uq_field_config"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    grid_name: Mapped[str] = mapped_column(String(60), index=True)
+    field_name: Mapped[str] = mapped_column(String(60))
+    label_he: Mapped[str | None] = mapped_column(String(120))
+    label_en: Mapped[str | None] = mapped_column(String(120))
+    label_ar: Mapped[str | None] = mapped_column(String(120))
+    width_chars: Mapped[int] = mapped_column(Integer, default=14, nullable=False)
+    padding: Mapped[int] = mapped_column(Integer, default=24, nullable=False)
+    visible: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    pin_side: Mapped[str | None] = mapped_column(String(10))
+    column_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    updated_at: Mapped[datetime] = _updated()
+    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class GridPreference(Base):
+    """A user's own column state for one grid: their widths, order and hiding,
+    layered on top of the administrator's field configuration."""
+    __tablename__ = "grid_preferences"
+    __table_args__ = (UniqueConstraint("user_id", "grid_name", name="uq_grid_pref"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    grid_name: Mapped[str] = mapped_column(String(60))
+    state: Mapped[str] = mapped_column(Text)          # JSON column state from the grid
+    updated_at: Mapped[datetime] = _updated()
+
+
+class UserPreference(Base):
+    """Display preferences: language, font size and contrast.
+
+    Stored server-side so a user's accessibility settings follow them between
+    devices; the client also mirrors them to localStorage so the very first
+    paint after a reload is already correct.
+    """
+    __tablename__ = "user_preferences"
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    language: Mapped[str] = mapped_column(String(5), default="he", nullable=False)
+    font_size: Mapped[str] = mapped_column(String(10), default="normal", nullable=False)
+    contrast: Mapped[str] = mapped_column(String(10), default="normal", nullable=False)
+    updated_at: Mapped[datetime] = _updated()

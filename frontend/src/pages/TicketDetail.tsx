@@ -94,7 +94,7 @@ export default function TicketDetail() {
   ];
 
   return (
-    <>
+    <div className="workarea__body workarea__body--reading">
       <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate('/tickets')}
               style={{ marginBottom: 'var(--space-3)' }}>
         חזרה לרשימת הקריאות
@@ -290,7 +290,7 @@ export default function TicketDetail() {
           toast.success('הקריאה נפתחה מחדש'); reloadAll();
         }}
       />
-    </>
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  CheckCircle2, Clock, ExternalLink, RotateCcw, ShieldCheck, Ticket, TrendingUp,
+  BarChart3, CheckCircle2, Clock, ExternalLink, RotateCcw, ShieldCheck, Ticket, TrendingUp,
 } from 'lucide-react';
 
 import { get } from '../lib/api';
@@ -8,8 +8,9 @@ import { useAsync } from '../lib/hooks';
 import { formatNumber } from '../lib/format';
 import type { AnalyticsData, Category, UserBrief } from '../lib/types';
 import {
-  Card, CardHeader, EmptyState, ErrorState, PageHeader, SkeletonCards,
+  Card, CardHeader, EmptyState, ErrorState, SkeletonCards,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 
 const RANGES = [
   { days: 7, label: '7 ימים' },
@@ -41,8 +42,11 @@ export default function Analytics() {
   const maxVolume = Math.max(...(data?.volume.map((point) => point.count) ?? [1]), 1);
 
   return (
-    <>
-      <PageHeader title="דוחות" subtitle="נפח פניות, זמני טיפול ועמידה בזמן תקן" />
+    <PageFrame
+      reading
+      icon={<BarChart3 />}
+      title="דוחות" summary="נפח פניות, זמני טיפול ועמידה בזמן תקן"
+    >
 
       <div className="toolbar">
         <div className="segmented" role="group" aria-label="טווח תאריכים">
@@ -205,7 +209,7 @@ export default function Analytics() {
           </div>
         </>
       )}
-    </>
+    </PageFrame>
   );
 }
 

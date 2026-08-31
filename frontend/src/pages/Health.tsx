@@ -1,4 +1,6 @@
-import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from 'lucide-react';
+import {
+  Activity, AlertTriangle, CheckCircle2, RefreshCw, XCircle,
+} from 'lucide-react';
 
 import { get } from '../lib/api';
 import { useAsync } from '../lib/hooks';
@@ -6,8 +8,9 @@ import { formatDateTime, relativeTime } from '../lib/format';
 import { channelLabel } from '../lib/labels';
 import type { HealthComponent } from '../lib/types';
 import {
-  Button, Card, CardHeader, Chip, EmptyState, ErrorState, PageHeader, SkeletonRows,
+  Button, Card, CardHeader, Chip, EmptyState, ErrorState, SkeletonRows,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 
 interface HealthData {
   components: HealthComponent[];
@@ -37,10 +40,11 @@ export default function Health() {
   if (health.error) return <ErrorState message={health.error} onRetry={health.reload} />;
 
   return (
-    <>
-      <PageHeader
-        title="תקינות המערכת"
-        subtitle={health.data
+    <PageFrame
+      reading
+      icon={<Activity />}
+      title="תקינות המערכת"
+        summary={health.data
           ? `נבדק ${formatDateTime(health.data.generated_at)}`
           : 'בדיקת רכיבי המערכת'}
         actions={
@@ -49,7 +53,7 @@ export default function Health() {
             רענון
           </Button>
         }
-      />
+    >
 
       {health.loading || !health.data ? <SkeletonRows rows={5} /> : (
         <>
@@ -139,6 +143,6 @@ export default function Health() {
           </div>
         </>
       )}
-    </>
+    </PageFrame>
   );
 }

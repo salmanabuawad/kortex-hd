@@ -9,9 +9,10 @@ import { formatCurrency, formatHours } from '../lib/format';
 import { priorityLabel } from '../lib/labels';
 import type { Category, Priority, RequestType, UserBrief } from '../lib/types';
 import {
-  Banner, Button, Card, Chip, Drawer, EmptyState, ErrorState, PageHeader, SelectField,
+  Banner, Button, Card, Chip, Drawer, EmptyState, ErrorState, SelectField,
   Skeleton, Switch, TextAreaField, TextField,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { useToast } from '../components/ui/toast';
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -57,16 +58,17 @@ export default function Categories() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="קטגוריות שירות"
-        subtitle="כל קטגוריה קובעת מי מטפל, מהו זמן התקן, ומתי נדרש אישור"
+    <PageFrame
+      reading
+      icon={<LifeBuoy />}
+      title="קטגוריות שירות"
+        summary="כל קטגוריה קובעת מי מטפל, מהו זמן התקן, ומתי נדרש אישור"
         actions={
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
             קטגוריה חדשה
           </Button>
         }
-      />
+    >
 
       {categories.error ? (
         <ErrorState message={categories.error} onRetry={categories.reload} />
@@ -150,7 +152,7 @@ export default function Categories() {
         onClose={() => { setCreating(false); setEditing(null); }}
         onSaved={() => { categories.reload(); setCreating(false); setEditing(null); }}
       />
-    </>
+    </PageFrame>
   );
 }
 

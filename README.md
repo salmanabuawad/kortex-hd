@@ -3,7 +3,7 @@
 A municipal service desk for **Buq'ata Local Council** (מועצה מקומית בוקעאתא).
 Hebrew-first, RTL throughout, built for internal staff and external contractors.
 
-**Stack:** React 19 + TypeScript (Vite) · Python 3.12 (FastAPI + SQLAlchemy 2) · PostgreSQL 16
+**Stack:** React 19 + TypeScript (Vite) · AG Grid · i18next · Python 3.12 (FastAPI + SQLAlchemy 2) · PostgreSQL 16
 **Live:** https://support.buqata.muni.il
 
 ---
@@ -27,6 +27,38 @@ through a scoped guest link without ever getting an account.
   estimated-hours threshold, or a manual request. A ticket with a pending approval
   cannot be closed.
 - **External subtasks** issue a single-use guest link scoped to one subtask.
+
+## Interface
+
+The frame follows the buildings-manager layout so the council's two systems feel
+like one product: an icon rail on the right, a dark app bar, section tabs, a blue
+title banner carrying the record count, an action bar, then a dense grid.
+
+**Languages.** Hebrew, Arabic and English, switched from the display menu in the
+app bar. Hebrew is the source language and the fallback, so a missing Arabic or
+English string renders its Hebrew text rather than a raw key. Arabic is a
+first-class locale, not a placeholder: Buq'ata is a Druze village where Arabic is
+the first language of most residents. Switching language flips `dir` on `<html>`,
+which every logical CSS property already follows. Dates and numbers follow the
+language but keep the Israel region, and Arabic is pinned to Latin digits so the
+interface does not mix `٤` with Latin ticket numbers.
+
+**Text size and contrast.** Small / normal / large, and light / normal / dark /
+high contrast. Both are attributes on `<html>` applied from localStorage *before*
+React mounts, so a reload paints correctly rather than flashing the default. Text
+size scales the type tokens, and control and grid-row heights grow with them.
+High contrast is a real accessibility mode: pure black on white, 2px borders in
+place of shadows, a yellow focus ring, and chips that carry a border so status is
+not conveyed by hue alone. Preferences are stored per user on the server, so they
+follow someone between devices, and mirrored to localStorage for first paint.
+
+**Grid layout is configurable in three layers**, in increasing priority:
+1. the column definitions in code,
+2. `field_configurations` — what an administrator sets for everyone on the
+   *Table layout* page: heading per language, width in characters, visibility,
+   pinning and order,
+3. `grid_preferences` — what each user adjusts for themselves by dragging and
+   resizing, saved from the grid toolbar.
 
 ## Repository layout
 
@@ -173,3 +205,13 @@ WhatsApp adapters are not implemented.
   without shared storage.
 - **No automated frontend tests.** TypeScript runs in strict mode with unused-symbol
   checks, and the build is verified, but there is no component or E2E browser suite.
+- **Only the tickets grid uses AG Grid so far.** Approvals, the user directory and
+  subtasks are still bespoke lists; their field configurations can be edited on the
+  Table layout page but nothing reads them yet.
+- **Translation coverage is uneven.** The shell, navigation, display menu, grid
+  columns, domain vocabulary (statuses, priorities, roles, SLA) and the table-layout
+  page are translated. Body copy on the longer pages — new ticket, ticket detail,
+  categories, workflows, settings, the guest workspace — is still Hebrew-only and
+  falls back to Hebrew in Arabic and English.
+- **AG Grid is 1 MB** of the bundle. It is split into its own chunk, but pages that
+  do not show a grid still pay for it on a warm cache only.

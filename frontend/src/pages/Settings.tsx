@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Bell, Building2, Clock, Puzzle, Save, ShieldCheck, SlidersHorizontal, Tags } from 'lucide-react';
+import {
+  Bell, Building2, Clock, Cog, Puzzle, Save, ShieldCheck, SlidersHorizontal, Tags,
+} from 'lucide-react';
 
 import { get, patch, put } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import type { RequestType } from '../lib/types';
 import {
-  Banner, Button, Card, CardHeader, Chip, ErrorState, PageHeader, SkeletonRows, Switch,
+  Banner, Button, Card, CardHeader, Chip, ErrorState, SkeletonRows, Switch,
   Tabs, TextField, type TabSpec,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { useToast } from '../components/ui/toast';
 
 type Groups = Record<string, Record<string, string | null>>;
@@ -84,10 +87,11 @@ export default function Settings() {
   const fields = FIELDS[tab];
 
   return (
-    <>
-      <PageHeader
-        title="הגדרות מערכת"
-        subtitle="הגדרות כלליות, זמני תקן, התראות ואבטחה"
+    <PageFrame
+      reading
+      icon={<Cog />}
+      title="הגדרות מערכת"
+        summary="הגדרות כלליות, זמני תקן, התראות ואבטחה"
         actions={
           dirty ? (
             <Button variant="primary" icon={<Save size={16} />} loading={saving}
@@ -96,7 +100,7 @@ export default function Settings() {
             </Button>
           ) : undefined
         }
-      />
+    >
 
       <Tabs tabs={TABS} active={tab} onChange={setTab} />
 
@@ -135,7 +139,7 @@ export default function Settings() {
           {tab === 'integrations' && <Integrations />}
         </div>
       )}
-    </>
+    </PageFrame>
   );
 }
 

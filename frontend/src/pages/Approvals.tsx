@@ -9,8 +9,9 @@ import { formatCurrency, formatDate, formatHours, relativeTime } from '../lib/fo
 import { approvalStatusLabel, approvalStatusTone, priorityLabel, triggerLabel } from '../lib/labels';
 import type { Approval } from '../lib/types';
 import {
-  Button, Card, Chip, EmptyState, ErrorState, PageHeader, SkeletonRows,
+  Button, Card, Chip, EmptyState, ErrorState, SkeletonRows,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { NoteDialog } from '../components/tickets/dialogs';
 import { useToast } from '../components/ui/toast';
 
@@ -48,11 +49,12 @@ export default function Approvals() {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <>
-      <PageHeader
-        title="אישורים"
-        subtitle="בקשות שחצו את ספי העלות, השעות או סוג השירות שהוגדרו בקטגוריה"
-      />
+    <PageFrame
+      reading
+      icon={<ShieldCheck />}
+      title="אישורים"
+        summary="בקשות שחצו את ספי העלות, השעות או סוג השירות שהוגדרו בקטגוריה"
+    >
 
       <div className="toolbar">
         <div className="segmented" role="group" aria-label="סינון אישורים">
@@ -208,6 +210,6 @@ export default function Approvals() {
           toast.success('הבקשה נשלחה למטפל');
         }}
       />
-    </>
+    </PageFrame>
   );
 }

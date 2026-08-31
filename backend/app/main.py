@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from .api import admin, approvals, auth, external, insights, subtasks, tickets
+from .api import admin, approvals, auth, display, external, insights, subtasks, tickets
 from .api.deps import current_user, visible_ticket
 from .config import COUNCIL_NAME, FRONTEND_URL, UPLOAD_DIR
 from .db import get_db
@@ -74,7 +74,7 @@ def download_subtask_attachment(
                         filename=row.filename, media_type=row.content_type)
 
 
-for module in (auth, tickets, subtasks, external, approvals, admin, insights):
+for module in (auth, tickets, subtasks, external, approvals, admin, insights, display):
     app.include_router(module.router)
 app.include_router(attachments)
 

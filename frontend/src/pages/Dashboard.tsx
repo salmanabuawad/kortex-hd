@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, Clock, Inbox, Plus, ShieldCheck, TrendingUp,
+  AlertTriangle, ArrowLeft, CheckCircle2, Clock, Inbox, LayoutDashboard, Plus, ShieldCheck,
+  TrendingUp,
 } from 'lucide-react';
 
 import { get } from '../lib/api';
@@ -10,8 +11,9 @@ import { formatCurrency } from '../lib/format';
 import { statusLabel } from '../lib/labels';
 import type { DashboardData } from '../lib/types';
 import {
-  Card, CardHeader, EmptyState, ErrorState, PageHeader, SkeletonCards,
+  Card, CardHeader, EmptyState, ErrorState, SkeletonCards,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { TicketTable } from '../components/tickets';
 
 function Kpi({
@@ -44,13 +46,14 @@ export default function Dashboard() {
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
   return (
-    <>
-      <PageHeader
-        title={`שלום, ${firstName}`}
-        subtitle={staff
+    <PageFrame
+      reading
+      icon={<LayoutDashboard />}
+      title={`שלום, ${firstName}`}
+        summary={staff
           ? 'מה דורש את תשומת הלב שלך כרגע'
           : 'מצב הקריאות שפתחת'}
-              />
+    >
 
       {loading || !data ? <SkeletonCards count={4} /> : (
         <>
@@ -230,6 +233,6 @@ export default function Dashboard() {
           </Card>
         </>
       )}
-    </>
+    </PageFrame>
   );
 }

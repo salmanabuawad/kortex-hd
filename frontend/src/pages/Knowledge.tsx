@@ -6,9 +6,10 @@ import { useAuth } from '../lib/auth';
 import { useAction, useAsync } from '../lib/hooks';
 import type { Category, KnownIssue } from '../lib/types';
 import {
-  Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, PageHeader, SelectField,
+  Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, SelectField,
   SkeletonRows, TextAreaField, TextField,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { useToast } from '../components/ui/toast';
 
 export default function Knowledge() {
@@ -32,16 +33,17 @@ export default function Knowledge() {
     || issue.summary.toLowerCase().includes(term));
 
   return (
-    <>
-      <PageHeader
-        title="פתרונות ותקלות ידועות"
-        subtitle="מאגר פתרונות שמוצג לפונים בעת פתיחת קריאה בקטגוריה המתאימה"
+    <PageFrame
+      reading
+      icon={<BookOpen />}
+      title="פתרונות ותקלות ידועות"
+        summary="מאגר פתרונות שמוצג לפונים בעת פתיחת קריאה בקטגוריה המתאימה"
         actions={user?.role === 'admin' ? (
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
             פתרון חדש
           </Button>
         ) : undefined}
-      />
+    >
 
       <div className="toolbar">
         <div className="toolbar__search">
@@ -107,7 +109,7 @@ export default function Knowledge() {
         categories={categories.data?.items ?? []}
         onSaved={() => { issues.reload(); setCreating(false); toast.success('הפתרון נוסף'); }}
       />
-    </>
+    </PageFrame>
   );
 }
 

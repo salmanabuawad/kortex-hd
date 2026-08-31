@@ -6,9 +6,10 @@ import { useAction, useAsync } from '../lib/hooks';
 import { formatCurrency, formatHours } from '../lib/format';
 import type { Category, RequestType, UserBrief, WorkflowRule } from '../lib/types';
 import {
-  Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, PageHeader, SelectField,
+  Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, SelectField,
   SkeletonRows, Switch, TextAreaField, TextField,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { useToast } from '../components/ui/toast';
 
 /** Renders a rule as a sentence a non-developer can read. */
@@ -60,16 +61,17 @@ export default function Workflows() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="כללי תהליך"
-        subtitle="מתי קריאה מחייבת אישור, ומי הגורם המאשר"
+    <PageFrame
+      reading
+      icon={<WorkflowIcon />}
+      title="כללי תהליך"
+        summary="מתי קריאה מחייבת אישור, ומי הגורם המאשר"
         actions={
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
             כלל חדש
           </Button>
         }
-      />
+    >
 
       <Banner tone="info">
         כללים אלה נבדקים בנוסף לספי האישור שהוגדרו בכל קטגוריה. אם קריאה עונה על כלל,
@@ -159,7 +161,7 @@ export default function Workflows() {
         onClose={() => { setCreating(false); setEditing(null); }}
         onSaved={() => { rules.reload(); setCreating(false); setEditing(null); }}
       />
-    </>
+    </PageFrame>
   );
 }
 

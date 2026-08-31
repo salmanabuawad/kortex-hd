@@ -1,0 +1,330 @@
+/* ==========================================================================
+   Display preferences: text size and contrast.
+
+   Both are driven by attributes on <html>, set before React mounts, so the
+   first paint after a reload is already correct rather than flashing the
+   default and then correcting itself.
+   ========================================================================== */
+
+/* --- text size -----------------------------------------------------------
+   Scales the type tokens rather than restyling components, so every surface
+   that already uses --text-* follows automatically. Row heights and control
+   heights grow with it, otherwise large text overflows its container. */
+
+[data-font-size="small"] {
+  --text-xs: 0.6875rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.625rem;
+}
+
+[data-font-size="large"] {
+  --text-xs: 0.875rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.3125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.25rem;
+
+  --sidebar-width: 290px;
+  --header-height: 68px;
+}
+
+/* Controls have to grow with the text or the label clips. */
+[data-font-size="large"] .btn { height: 44px; padding: 0 var(--space-5); }
+[data-font-size="large"] .btn--sm { height: 36px; }
+[data-font-size="large"] .btn--lg { height: 50px; }
+[data-font-size="large"] .icon-btn { width: 42px; height: 42px; }
+[data-font-size="large"] .input,
+[data-font-size="large"] .select,
+[data-font-size="large"] .textarea { min-height: 46px; }
+[data-font-size="large"] .chip { height: 26px; padding: 0 var(--space-3); }
+[data-font-size="large"] .avatar { width: 36px; height: 36px; }
+[data-font-size="large"] .avatar--lg { width: 50px; height: 50px; }
+[data-font-size="large"] .toolbar .select { height: 42px; min-height: 42px; }
+
+[data-font-size="small"] .btn { height: 32px; }
+[data-font-size="small"] .icon-btn { width: 30px; height: 30px; }
+[data-font-size="small"] .input,
+[data-font-size="small"] .select,
+[data-font-size="small"] .textarea { min-height: 34px; }
+
+/* --- contrast ------------------------------------------------------------
+   light / dark shift the neutral ground. "contrast" is the accessibility
+   mode: pure white behind pure black, heavier borders, thicker focus rings,
+   and no reliance on a subtle background to separate surfaces. */
+
+[data-contrast="light"] {
+  --app-bg: #ffffff;
+  --surface-muted: #fcfdfe;
+  --surface-sunken: #f5f8fa;
+  --border: #e8edf2;
+}
+
+[data-contrast="dark"] {
+  --app-bg: #e6ebf0;
+  --surface-muted: #eef2f6;
+  --surface-sunken: #e2e8f0;
+  --border: #cbd5e1;
+  --border-strong: #94a3b8;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+}
+
+[data-contrast="contrast"] {
+  --app-bg: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #ffffff;
+  --surface-sunken: #f2f2f2;
+
+  --text: #000000;
+  --text-secondary: #000000;
+  --text-muted: #1a1a1a;
+
+  --border: #000000;
+  --border-strong: #000000;
+
+  --primary: #0b3fae;
+  --primary-hover: #082e80;
+  --primary-soft: #e8eeff;
+  --primary-border: #0b3fae;
+
+  --success: #0a6b33;
+  --success-text: #0a6b33;
+  --success-soft: #e2f7e9;
+  --warning-text: #7a4200;
+  --warning-soft: #fff3e0;
+  --danger: #a80000;
+  --danger-text: #a80000;
+  --danger-soft: #ffe8e8;
+  --accent: #5b21b6;
+
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 0 0 1px #000000;
+  --shadow-lg: 0 0 0 2px #000000;
+  --shadow-focus: 0 0 0 4px #ffbf00;
+}
+
+/* Surfaces need a visible edge once shadows are gone. */
+[data-contrast="contrast"] .card,
+[data-contrast="contrast"] .kpi,
+[data-contrast="contrast"] .toolbar,
+[data-contrast="contrast"] .work-item,
+[data-contrast="contrast"] .approval-card,
+[data-contrast="contrast"] .composer,
+[data-contrast="contrast"] .entry__bubble,
+[data-contrast="contrast"] .actionbar,
+[data-contrast="contrast"] .gridarea,
+[data-contrast="contrast"] .settings-pop { border: 2px solid #000000; }
+
+/* Frame chrome: the tab row and title banner need their own edges once the
+   subtle background separation is gone. */
+[data-contrast="contrast"] .tabsbar { border-bottom: 2px solid #000000; }
+[data-contrast="contrast"] .tabsbar__tab { color: #000000; }
+[data-contrast="contrast"] .tabsbar__tab--active {
+  color: var(--banner-blue);
+  border-bottom-width: 4px;
+}
+[data-contrast="contrast"] .titlebar {
+  border: 2px solid #000000;
+  color: #ffffff;
+}
+[data-contrast="contrast"] .appbar { border-bottom: 2px solid #ffffff; }
+[data-contrast="contrast"] .appfooter { border-top: 2px solid #000000; }
+[data-contrast="contrast"] .checkfilter { border-width: 2px; }
+[data-contrast="contrast"] .settings-pop__option { border-width: 2px; }
+
+[data-contrast="contrast"] .table th,
+[data-contrast="contrast"] .table td { border-bottom: 1px solid #000000; }
+[data-contrast="contrast"] .table th { border-bottom-width: 2px; background: #f2f2f2; }
+
+[data-contrast="contrast"] .chip { border: 1px solid currentColor; font-weight: 700; }
+[data-contrast="contrast"] .btn { border-width: 2px; border-color: currentColor; }
+[data-contrast="contrast"] .btn--primary,
+[data-contrast="contrast"] .btn--success { border-color: #000000; }
+[data-contrast="contrast"] .input,
+[data-contrast="contrast"] .select,
+[data-contrast="contrast"] .textarea { border-width: 2px; }
+
+[data-contrast="contrast"] :focus-visible {
+  outline: 3px solid #000000;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px #ffbf00;
+}
+
+/* The navy shell stays dark, but its text goes to full white. */
+[data-contrast="contrast"] {
+  --shell-bg: #000000;
+  --shell-bg-hover: #262626;
+  --shell-text: #ffffff;
+  --shell-border: #ffffff;
+}
+[data-contrast="contrast"] .sidebar__subtitle,
+[data-contrast="contrast"] .sidebar__group-label,
+[data-contrast="contrast"] .sidebar__user-role { color: #e6e6e6; }
+
+/* Status colours must stay distinguishable without relying on hue alone, so
+   every chip also carries a border in this mode (set above) and darker text. */
+[data-contrast="contrast"] .chip--neutral { background: #f2f2f2; color: #000000; }
+[data-contrast="contrast"] .chip--blue { background: #e8eeff; color: #0b3fae; }
+[data-contrast="contrast"] .chip--purple { background: #f1e8ff; color: #5b21b6; }
+[data-contrast="contrast"] .chip--green { background: #e2f7e9; color: #0a6b33; }
+[data-contrast="contrast"] .chip--amber { background: #fff3e0; color: #7a4200; }
+[data-contrast="contrast"] .chip--red { background: #ffe8e8; color: #a80000; }
+
+/* ==========================================================================
+   AG Grid — themed from the same tokens, and responsive to both settings
+   ========================================================================== */
+
+.grid-shell {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.ag-theme-kortex {
+  --ag-font-family: var(--font);
+  --ag-font-size: var(--text-base);
+  --ag-background-color: var(--surface);
+  --ag-header-background-color: var(--surface-muted);
+  --ag-odd-row-background-color: var(--surface);
+  --ag-row-hover-color: var(--surface-muted);
+  --ag-selected-row-background-color: var(--primary-soft);
+  --ag-border-color: var(--border);
+  --ag-header-foreground-color: var(--text-muted);
+  --ag-foreground-color: var(--text);
+  --ag-row-border-color: var(--border);
+  --ag-header-column-separator-display: none;
+  --ag-borders: none;
+  --ag-row-height: 44px;
+  --ag-header-height: 40px;
+  --ag-cell-horizontal-padding: 16px;
+  --ag-grid-size: 5px;
+  --ag-wrapper-border-radius: 0;
+}
+
+.ag-theme-kortex .ag-header {
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.ag-theme-kortex .ag-header-cell-text {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.ag-theme-kortex .ag-row { cursor: pointer; }
+.ag-theme-kortex .ag-row-focus { background: var(--primary-soft); }
+.ag-theme-kortex .ag-cell {
+  display: flex;
+  align-items: center;
+  line-height: 1.4;
+}
+.ag-theme-kortex .ag-overlay-no-rows-wrapper { padding-top: var(--space-10); }
+
+[data-font-size="small"] .ag-theme-kortex {
+  --ag-row-height: 36px;
+  --ag-header-height: 34px;
+  --ag-cell-horizontal-padding: 12px;
+}
+[data-font-size="large"] .ag-theme-kortex {
+  --ag-row-height: 60px;
+  --ag-header-height: 54px;
+  --ag-cell-horizontal-padding: 22px;
+}
+[data-font-size="large"] .ag-theme-kortex .ag-header-cell-text { font-size: var(--text-sm); }
+
+[data-contrast="contrast"] .ag-theme-kortex {
+  --ag-border-color: #000000;
+  --ag-row-border-color: #000000;
+  --ag-header-background-color: #f2f2f2;
+  --ag-header-foreground-color: #000000;
+  --ag-foreground-color: #000000;
+  --ag-row-hover-color: #ffe9a8;
+  --ag-selected-row-background-color: #ffe9a8;
+}
+[data-contrast="contrast"] .ag-theme-kortex .ag-header { border-bottom: 2px solid #000000; }
+[data-contrast="contrast"] .ag-theme-kortex .ag-header-cell-text { color: #000000; }
+[data-contrast="contrast"] .grid-shell { border: 2px solid #000000; }
+
+/* AG Grid ships LTR-first; these keep headers and cells reading correctly
+   when the document direction is RTL. */
+[dir="rtl"] .ag-theme-kortex .ag-header-cell,
+[dir="rtl"] .ag-theme-kortex .ag-cell { text-align: right; }
+[dir="rtl"] .ag-theme-kortex .ag-header-cell-label { flex-direction: row-reverse; }
+
+.grid-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Display settings menu
+   ========================================================================== */
+
+.settings-pop {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + var(--space-2));
+  width: 250px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3);
+  z-index: 60;
+}
+.settings-pop__group + .settings-pop__group {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.settings-pop__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.settings-pop__label svg { width: 14px; height: 14px; }
+.settings-pop__options { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.settings-pop__option {
+  flex: 1 1 auto;
+  min-width: 62px;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.settings-pop__option:hover { background: var(--surface-muted); }
+.settings-pop__option[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Font-size options preview their own size, so the choice is self-evident. */
+.settings-pop__option--sm { font-size: var(--text-xs); }
+.settings-pop__option--md { font-size: var(--text-base); }
+.settings-pop__option--lg { font-size: var(--text-lg); }

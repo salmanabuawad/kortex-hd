@@ -1,18 +1,32 @@
-/** Formatting helpers. Hebrew locale, and everything numeric is rendered so it
- *  stays left-to-right inside the right-to-left page. */
+/** Formatting helpers. Dates and numbers follow the active interface language;
+ *  everything numeric is rendered so it stays left-to-right inside a
+ *  right-to-left page. */
+import i18n from '../i18n';
 
-const LOCALE = 'he-IL';
+/** Region stays Israel in every language: the calendar, week start and number
+ *  grouping a council employee expects do not change when they switch to
+ *  Arabic or English. */
+/* Arabic defaults to Arabic-Indic digits (٤), but ticket numbers, phone numbers
+   and IDs elsewhere in the product are Latin. The -u-nu-latn extension keeps
+   every number in the interface using one set of digits. */
+const LOCALES: Record<string, string> = {
+  he: 'he-IL',
+  ar: 'ar-IL-u-nu-latn',
+  en: 'en-IL',
+};
+
+const locale = () => LOCALES[i18n.language] ?? 'he-IL';
 
 export function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
-  return new Date(value).toLocaleDateString(LOCALE, {
+  return new Date(value).toLocaleDateString(locale(), {
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
 }
 
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '—';
-  return new Date(value).toLocaleString(LOCALE, {
+  return new Date(value).toLocaleString(locale(), {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -20,7 +34,7 @@ export function formatDateTime(value: string | null | undefined): string {
 
 export function formatTime(value: string | null | undefined): string {
   if (!value) return '—';
-  return new Date(value).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' });
+  return new Date(value).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 /** "לפני 3 שעות" -- relative time reads better than a timestamp in a feed. */
@@ -30,7 +44,7 @@ export function relativeTime(value: string | null | undefined): string {
   const diffSeconds = Math.round((then - Date.now()) / 1000);
   const abs = Math.abs(diffSeconds);
 
-  const formatter = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' });
+  const formatter = new Intl.RelativeTimeFormat(locale(), { numeric: 'auto' });
   if (abs < 60) return formatter.format(Math.round(diffSeconds), 'second');
   if (abs < 3600) return formatter.format(Math.round(diffSeconds / 60), 'minute');
   if (abs < 86400) return formatter.format(Math.round(diffSeconds / 3600), 'hour');
@@ -41,19 +55,21 @@ export function relativeTime(value: string | null | undefined): string {
 
 export function formatCurrency(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
-  return new Intl.NumberFormat(LOCALE, {
+  return new Intl.NumberFormat(locale(), {
     style: 'currency', currency: 'ILS', maximumFractionDigits: 0,
   }).format(value);
 }
 
 export function formatNumber(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
-  return new Intl.NumberFormat(LOCALE).format(value);
+  return new Intl.NumberFormat(locale()).format(value);
 }
 
 export function formatHours(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
-  return `${new Intl.NumberFormat(LOCALE).format(value)} שע׳`;
+  const suffix = i18n.t('duration.hoursShort');
+  return `${new Intl.NumberFormat(locale()).format(value)} ${
+    suffix === 'duration.hoursShort' ? 'שע׳' : suffix}`;
 }
 
 export function formatBytes(bytes: number): string {
@@ -64,18 +80,25 @@ export function formatBytes(bytes: number): string {
 
 /** SLA countdown, phrased for whichever side of the deadline we are on. */
 export function formatSlaRemaining(minutes: number | null | undefined): string {
-  if (minutes === null || minutes === undefined) return 'ללא יעד';
+  if (minutes === null || minutes === undefined) return i18n.t('sla.none');
   const abs = Math.abs(minutes);
   const days = Math.floor(abs / 1440);
   const hours = Math.floor((abs % 1440) / 60);
   const mins = abs % 60;
 
-  let span: string;
-  if (days > 0) span = `${days} ימים${hours ? ` ו-${hours} שעות` : ''}`;
-  else if (hours > 0) span = `${hours} שעות${mins ? ` ו-${mins} דק׳` : ''}`;
-  else span = `${mins} דקות`;
+  const unit = (key: string, fallback: string) => {
+    const value = i18n.t(`duration.${key}`);
+    return value === `duration.${key}` ? fallback : value;
+  };
 
-  return minutes < 0 ? `באיחור של ${span}` : `נותרו ${span}`;
+  let span: string;
+  if (days > 0) span = `${days} ${unit('days', 'ימים')}`;
+  else if (hours > 0) span = `${hours} ${unit('hours', 'שעות')}`;
+  else span = `${mins} ${unit('minutes', 'דקות')}`;
+
+  return minutes < 0
+    ? `${unit('overdueBy', 'באיחור של')} ${span}`
+    : `${unit('remaining', 'נותרו')} ${span}`;
 }
 
 export function initialsOf(name: string | null | undefined): string {

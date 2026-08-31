@@ -170,3 +170,29 @@ class KnownIssueIn(BaseModel):
     resolution: str | None = None
     category_id: int | None = None
     active: bool = True
+
+
+class FieldConfigIn(BaseModel):
+    field_name: str = Field(min_length=1, max_length=60)
+    label_he: str | None = None
+    label_en: str | None = None
+    label_ar: str | None = None
+    width_chars: int = Field(default=14, ge=2, le=120)
+    padding: int = Field(default=24, ge=0, le=120)
+    visible: bool = True
+    pinned: bool = False
+    pin_side: str | None = None
+
+
+class FieldConfigBulk(BaseModel):
+    fields: list[FieldConfigIn]
+
+
+class GridStateIn(BaseModel):
+    state: list[dict] | dict
+
+
+class PreferencesIn(BaseModel):
+    language: str = "he"
+    font_size: str = "normal"
+    contrast: str = "normal"

@@ -1,200 +1,343 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
-  Activity, BarChart3, BookOpen, ChevronDown, ClipboardList, Cog, Inbox,
-  LayoutDashboard, LifeBuoy, LogOut, Menu, Plus, Search, ShieldCheck, Ticket, Users, Workflow, X,
+  Activity, BarChart3, BookOpen, ClipboardList, Cog, HelpCircle, LayoutDashboard, LifeBuoy,
+  LogOut, Search, ShieldCheck, SlidersHorizontal, Table2, User, Users, Workflow,
 } from 'lucide-react';
 
-import { useAuth } from '../../lib/auth';
-import { roleLabel } from '../../lib/labels';
-import { Avatar, IconButton } from '../ui';
+import { isStaff, useAuth } from '../../lib/auth';
+import { useDisplay, useSyncDisplayPreferences } from '../../lib/display';
+import { LANGUAGE_NAMES, type Language } from '../../i18n';
 import type { Role } from '../../lib/types';
 
-interface NavItem {
+/* -------------------------------------------------------------------------- */
+/* Navigation model                                                            */
+/* -------------------------------------------------------------------------- */
+
+interface RailItem {
   to: string;
-  label: string;
   icon: ReactNode;
-  roles?: Role[];
-  end?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  items: NavItem[];
+  labelKey: string;
   roles?: Role[];
 }
 
-const NAV: NavGroup[] = [
-  {
-    label: 'עבודה',
-    items: [
-      { to: '/', label: 'לוח בקרה', icon: <LayoutDashboard />, end: true },
-      { to: '/tickets', label: 'הקריאות שלי', icon: <Ticket />, roles: ['requester'] },
-      { to: '/tickets?scope=mine', label: 'הקריאות שלי', icon: <Inbox />,
-        roles: ['resolver', 'approver', 'admin'] },
-      { to: '/tickets', label: 'כל הקריאות', icon: <ClipboardList />,
-        roles: ['resolver', 'approver', 'admin'] },
-      { to: '/approvals', label: 'ממתין לאישור', icon: <ShieldCheck />,
-        roles: ['resolver', 'approver', 'admin'] },
-    ],
-  },
-  {
-    label: 'מוקד השירות',
-    roles: ['resolver', 'approver', 'admin'],
-    items: [
-      { to: '/knowledge', label: 'פתרונות ותקלות ידועות', icon: <BookOpen /> },
-      { to: '/categories', label: 'קטגוריות', icon: <LifeBuoy />, roles: ['admin'] },
-    ],
-  },
-  {
-    label: 'ניהול',
-    roles: ['admin'],
-    items: [
-      { to: '/directory', label: 'משתמשים', icon: <Users /> },
-      { to: '/workflows', label: 'כללי תהליך', icon: <Workflow /> },
-      { to: '/analytics', label: 'דוחות', icon: <BarChart3 /> },
-      { to: '/settings', label: 'הגדרות', icon: <Cog /> },
-      { to: '/health', label: 'תקינות המערכת', icon: <Activity /> },
-    ],
-  },
+/** The rail carries the primary destinations only — one icon each. Everything
+ *  else lives on the tab row of the section it belongs to. */
+const RAIL: RailItem[] = [
+  { to: '/', icon: <LayoutDashboard />, labelKey: 'nav.dashboard' },
+  { to: '/tickets', icon: <ClipboardList />, labelKey: 'nav.allTickets' },
+  { to: '/approvals', icon: <ShieldCheck />, labelKey: 'nav.approvals',
+    roles: ['resolver', 'approver', 'admin'] },
+  { to: '/knowledge', icon: <BookOpen />, labelKey: 'nav.knowledge',
+    roles: ['resolver', 'approver', 'admin'] },
+  { to: '/categories', icon: <LifeBuoy />, labelKey: 'nav.categories', roles: ['admin'] },
+  { to: '/directory', icon: <Users />, labelKey: 'nav.directory', roles: ['admin'] },
+  { to: '/workflows', icon: <Workflow />, labelKey: 'nav.workflows', roles: ['admin'] },
+  { to: '/analytics', icon: <BarChart3 />, labelKey: 'nav.analytics', roles: ['admin'] },
+  { to: '/field-config', icon: <Table2 />, labelKey: 'nav.fieldConfig', roles: ['admin'] },
+  { to: '/settings', icon: <Cog />, labelKey: 'nav.settings', roles: ['admin'] },
+  { to: '/health', icon: <Activity />, labelKey: 'nav.health', roles: ['admin'] },
 ];
 
-function visibleFor(role: Role): NavGroup[] {
-  return NAV
-    .filter((group) => !group.roles || group.roles.includes(role))
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => !item.roles || item.roles.includes(role)),
-    }))
-    .filter((group) => group.items.length > 0);
+/* -------------------------------------------------------------------------- */
+/* Display settings popover                                                    */
+/* -------------------------------------------------------------------------- */
+
+const LANGUAGES: Language[] = ['he', 'ar', 'en'];
+
+function DisplayMenu({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const {
+    language, fontSize, contrast, setLanguage, setFontSize, setContrast,
+  } = useDisplay();
+
+  return (
+    <div className="settings-pop" role="dialog" aria-label={t('display.settingsMenu')}>
+      <div className="settings-pop__group">
+        <span className="settings-pop__label">{t('display.language')}</span>
+        <div className="settings-pop__options">
+          {LANGUAGES.map((code) => (
+            <button
+              key={code}
+              type="button"
+              className="settings-pop__option"
+              aria-pressed={language === code}
+              onClick={() => { setLanguage(code); onClose(); }}
+            >
+              {LANGUAGE_NAMES[code]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="settings-pop__group">
+        <span className="settings-pop__label">{t('display.fontSize')}</span>
+        <div className="settings-pop__options">
+          {(['small', 'normal', 'large'] as const).map((size) => (
+            <button
+              key={size}
+              type="button"
+              className={`settings-pop__option settings-pop__option--${
+                size === 'small' ? 'sm' : size === 'normal' ? 'md' : 'lg'}`}
+              aria-pressed={fontSize === size}
+              onClick={() => setFontSize(size)}
+            >
+              {t(`display.${size}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="settings-pop__group">
+        <span className="settings-pop__label">{t('display.contrast')}</span>
+        <div className="settings-pop__options">
+          {(['light', 'normal', 'dark', 'contrast'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className="settings-pop__option"
+              aria-pressed={contrast === mode}
+              onClick={() => setContrast(mode)}
+            >
+              {t(mode === 'contrast' ? 'display.highContrast' : `display.${mode}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Shell                                                                       */
+/* -------------------------------------------------------------------------- */
+
 export function Shell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [search, setSearch] = useState('');
 
-  // Close the mobile drawer whenever navigation happens.
-  useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
+  const [menu, setMenu] = useState<'display' | 'user' | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useSyncDisplayPreferences(!!user);
+
+  useEffect(() => {
+    if (!menu) return undefined;
+    const onDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenu(null);
+    };
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenu(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
+
+  useEffect(() => { setMenu(null); }, [location.pathname]);
 
   if (!user) return null;
-  const groups = visibleFor(user.role);
 
-  const submitSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    const term = search.trim();
-    navigate(term ? `/tickets?q=${encodeURIComponent(term)}` : '/tickets');
-  };
+  const items = RAIL.filter((item) => !item.roles || item.roles.includes(user.role));
+  const isActive = (to: string) =>
+    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
 
   return (
-    <div className="shell">
-      {menuOpen && (
-        <div className="sidebar-scrim" onClick={() => setMenuOpen(false)} aria-hidden />
-      )}
-
-      <aside className={`sidebar${menuOpen ? ' sidebar--open' : ''}`}>
-        <div className="sidebar__brand">
-          <span className="sidebar__mark"><LifeBuoy size={20} /></span>
-          <div className="grow">
-            <div className="sidebar__title">מוקד שירות</div>
-            <div className="sidebar__subtitle">מועצה מקומית בוקעאתא</div>
-          </div>
-          <IconButton
-            label="סגירת התפריט" className="mobile-only"
-            onClick={() => setMenuOpen(false)}
-            style={{ color: 'var(--shell-text)' }}
-          >
-            <X />
-          </IconButton>
-        </div>
-
-        <nav className="sidebar__nav" aria-label="ניווט ראשי">
-          {groups.map((group) => (
-            <div className="sidebar__group" key={group.label}>
-              <div className="sidebar__group-label">{group.label}</div>
-              <ul>
-                {group.items.map((item) => (
-                  <li key={`${group.label}-${item.to}-${item.label}`}>
-                    <NavLink
-                      to={item.to}
-                      end={item.end}
-                      className={({ isActive }) => {
-                        // NavLink ignores the query string, so "my tickets" and
-                        // "all tickets" would both light up. Compare explicitly.
-                        const [path, query] = item.to.split('?');
-                        const samePath = location.pathname === path;
-                        const sameQuery = (location.search.replace('?', '') || '') === (query || '');
-                        const active = item.to.includes('?')
-                          ? samePath && sameQuery
-                          : isActive && (item.end ? true : sameQuery);
-                        return `sidebar__link${active ? ' sidebar__link--active' : ''}`;
-                      }}
-                    >
-                      {item.icon}
-                      <span className="grow">{item.label}</span>
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
-
-        <div className="sidebar__footer">
-          <button className="sidebar__user" onClick={() => navigate('/change-password')}>
-            <Avatar initials={user.initials} />
-            <span className="grow">
-              <span className="sidebar__user-name" style={{ display: 'block' }}>
-                {user.full_name}
-              </span>
-              <span className="sidebar__user-role">{roleLabel[user.role]}</span>
-            </span>
-            <ChevronDown size={15} />
-          </button>
+    <div className="app-frame">
+      <nav className="rail" aria-label={t('nav.groupWork')}>
+        <span className="rail__role">{t(`role.${user.role}`)}</span>
+        {items.map((item) => (
           <button
-            className="sidebar__user"
-            onClick={() => { logout(); navigate('/login'); }}
+            key={item.to}
+            type="button"
+            className={`rail__item${isActive(item.to) ? ' rail__item--active' : ''}`}
+            title={t(item.labelKey)}
+            aria-label={t(item.labelKey)}
+            aria-current={isActive(item.to) ? 'page' : undefined}
+            onClick={() => navigate(item.to)}
           >
-            <LogOut size={17} />
-            <span className="grow" style={{ fontSize: 'var(--text-sm)' }}>יציאה</span>
+            {item.icon}
           </button>
-        </div>
-      </aside>
+        ))}
+        <span className="rail__spacer" />
+        <button
+          type="button"
+          className="rail__item"
+          title={t('nav.logout')}
+          aria-label={t('nav.logout')}
+          onClick={() => { logout(); navigate('/login'); }}
+        >
+          <LogOut />
+        </button>
+      </nav>
 
-      <div className="main">
-        <header className="topbar">
-          <IconButton
-            label="פתיחת התפריט" className="mobile-only"
-            onClick={() => setMenuOpen(true)}
+      <div className="workarea">
+        <header className="appbar">
+          <span className="appbar__brand">
+            <LifeBuoy aria-hidden />
+            {t('app.name')} · {t('app.council')}
+          </span>
+
+          <span className="appbar__spacer" />
+
+          <button
+            type="button"
+            className="appbar__btn"
+            title={t('nav.search')}
+            aria-label={t('nav.searchLabel')}
+            onClick={() => navigate('/tickets')}
           >
-            <Menu />
-          </IconButton>
+            <Search />
+          </button>
 
-          <form className="topbar__search" onSubmit={submitSearch} role="search">
-            <Search aria-hidden />
-            <input
-              type="search"
-              placeholder="חיפוש קריאה לפי נושא או מספר…"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              aria-label="חיפוש קריאות"
-            />
-          </form>
-
-          <div className="topbar__spacer" />
-
-          <div className="topbar__actions">
-            <Link to="/tickets/new" className="btn btn--primary btn--sm">
-              <Plus size={16} />
-              <span className="grow">קריאה חדשה</span>
-            </Link>
+          <div className="appbar__menu" ref={menu ? menuRef : undefined}>
+            <button
+              type="button"
+              className="appbar__btn"
+              title={t('display.settingsMenu')}
+              aria-label={t('display.settingsMenu')}
+              aria-expanded={menu === 'display'}
+              onClick={() => setMenu(menu === 'display' ? null : 'display')}
+            >
+              <SlidersHorizontal />
+            </button>
+            {menu === 'display' && <DisplayMenu onClose={() => setMenu(null)} />}
           </div>
+
+          <div className="appbar__menu">
+            <button
+              type="button"
+              className="appbar__btn"
+              title={user.full_name}
+              aria-label={user.full_name}
+              aria-expanded={menu === 'user'}
+              onClick={() => setMenu(menu === 'user' ? null : 'user')}
+            >
+              <User />
+            </button>
+            {menu === 'user' && (
+              <div className="settings-pop" role="dialog" aria-label={user.full_name}>
+                <div className="settings-pop__group">
+                  <div style={{ fontWeight: 700 }}>{user.full_name}</div>
+                  <div className="cell-meta">{t(`role.${user.role}`)}</div>
+                  <div className="cell-meta ltr">{user.email}</div>
+                </div>
+                <div className="settings-pop__group">
+                  <button
+                    type="button"
+                    className="settings-pop__option"
+                    style={{ width: '100%' }}
+                    onClick={() => navigate('/change-password')}
+                  >
+                    {t('nav.changePassword', 'החלפת סיסמה')}
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-pop__option"
+                    style={{ width: '100%', marginTop: 'var(--space-1)' }}
+                    onClick={() => { logout(); navigate('/login'); }}
+                  >
+                    {t('nav.logout')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="appbar__btn"
+            title={t('nav.knowledge')}
+            aria-label={t('nav.knowledge')}
+            onClick={() => navigate(isStaff(user) ? '/knowledge' : '/tickets/new')}
+          >
+            <HelpCircle />
+          </button>
         </header>
 
-        <main className="content">{children}</main>
+        {children}
+
+        <footer className="appfooter">© Kortex</footer>
       </div>
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page frame                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export interface PageTab {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  count?: number;
+}
+
+/** The repeating page skeleton: tab row, blue title banner, action bar, body. */
+export function PageFrame({
+  title, summary, icon, tabs, activeTab, onTabChange, actions, filters, banner,
+  reading, children,
+}: {
+  title: string;
+  summary?: string;
+  icon?: ReactNode;
+  tabs?: PageTab[];
+  activeTab?: string;
+  onTabChange?: (id: string) => void;
+  actions?: ReactNode;
+  filters?: ReactNode;
+  banner?: ReactNode;
+  /** Reading layout: narrower column with more spacing, for document pages. */
+  reading?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      {tabs && tabs.length > 0 && (
+        <div className="tabsbar" role="tablist">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              className={`tabsbar__tab${activeTab === tab.id ? ' tabsbar__tab--active' : ''}`}
+              onClick={() => onTabChange?.(tab.id)}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className="tabsbar__count">{tab.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className={`workarea__body${reading ? ' workarea__body--reading' : ''}`}>
+        <div className="titlebar">
+          {icon && <span className="titlebar__icon">{icon}</span>}
+          <span className="titlebar__title">{title}</span>
+          {summary && <span className="titlebar__summary">{summary}</span>}
+          <span className="titlebar__spacer" />
+        </div>
+
+        {banner}
+
+        {(actions || filters) && (
+          <div className="actionbar">
+            <div className="actionbar__filters">{filters}</div>
+            <div className="actionbar__actions">{actions}</div>
+          </div>
+        )}
+
+        {children}
+      </div>
+    </>
   );
 }

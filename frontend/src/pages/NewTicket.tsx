@@ -1,8 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowLeft, Building2, Database, Lightbulb, LifeBuoy, Network, Printer,
-  Send, ShieldCheck, Sparkles,
+  AlertTriangle, ArrowLeft, Building2, Database, LifeBuoy, Lightbulb, Network, Plus,
+  Printer, Send, ShieldCheck, Sparkles,
 } from 'lucide-react';
 
 import { get, post } from '../lib/api';
@@ -11,9 +11,10 @@ import { formatCurrency, formatHours } from '../lib/format';
 import { priorityLabel } from '../lib/labels';
 import type { Category, KnownIssue, Priority, RequestType, Ticket } from '../lib/types';
 import {
-  Banner, Button, Card, CardHeader, ErrorState, PageHeader, SelectField, Skeleton,
+  Banner, Button, Card, CardHeader, ErrorState, SelectField, Skeleton,
   TextAreaField, TextField,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { useToast } from '../components/ui/toast';
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -125,16 +126,17 @@ export default function NewTicket() {
   }
 
   return (
-    <>
-      <PageHeader
-        title="פתיחת קריאה חדשה"
-        subtitle="תארו את הבעיה או הבקשה, והפנייה תנותב אוטומטית לגורם המטפל"
+    <PageFrame
+      reading
+      icon={<Plus />}
+      title="פתיחת קריאה חדשה"
+        summary="תארו את הבעיה או הבקשה, והפנייה תנותב אוטומטית לגורם המטפל"
         actions={
           <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>
             חזרה
           </Button>
         }
-      />
+    >
 
       <form onSubmit={submit} style={{ maxWidth: 820 }}>
         <div className="stack">
@@ -304,6 +306,6 @@ export default function NewTicket() {
           )}
         </div>
       </form>
-    </>
+    </PageFrame>
   );
 }

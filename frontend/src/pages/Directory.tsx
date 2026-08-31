@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import {
-  KeyRound, Mail, Pencil, Phone, Plus, Search, UserCheck, UserX,
+  KeyRound, Mail, Pencil, Phone, Plus, Search, UserCheck, UserX, Users,
 } from 'lucide-react';
 
 import { get, patch, post } from '../lib/api';
@@ -10,9 +10,9 @@ import { relativeTime } from '../lib/format';
 import { roleLabel, roleTone } from '../lib/labels';
 import type { Department, Role, User } from '../lib/types';
 import {
-  Avatar, Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, PageHeader,
-  SelectField, SkeletonRows, TextField,
+  Avatar, Banner, Button, Card, Chip, Dialog, EmptyState, ErrorState, SelectField, SkeletonRows, TextField,
 } from '../components/ui';
+import { PageFrame } from '../components/layout/Shell';
 import { useToast } from '../components/ui/toast';
 
 const ROLES: Role[] = ['requester', 'resolver', 'approver', 'admin'];
@@ -56,16 +56,17 @@ export default function Directory() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="משתמשים ואנשי קשר"
-        subtitle="רק משתמשים רשומים ופעילים יכולים להתחבר ולפתוח קריאות"
+    <PageFrame
+      reading
+      icon={<Users />}
+      title="משתמשים ואנשי קשר"
+        summary="רק משתמשים רשומים ופעילים יכולים להתחבר ולפתוח קריאות"
         actions={
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
             משתמש חדש
           </Button>
         }
-      />
+    >
 
       <div className="toolbar">
         <div className="toolbar__search">
@@ -175,7 +176,7 @@ export default function Directory() {
         onClose={() => setResetting(null)}
         onDone={() => { users.reload(); setResetting(null); }}
       />
-    </>
+    </PageFrame>
   );
 }
 

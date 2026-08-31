@@ -1,12 +1,20 @@
 /** Hebrew labels and chip tones for every enumerated value in the domain.
  *  Kept in one file so a new status is a single edit. */
+import i18n from '../i18n';
 import type {
-  ApprovalStatus, AssigneeType, Channel, Priority, Role, SlaState, SubtaskStatus, TicketStatus,
+  ApprovalStatus, Priority, Role, SlaState, SubtaskStatus, TicketStatus,
 } from './types';
+
+/** Reads a translated value at call time, so switching language re-renders
+ *  correctly without every call site taking a hook. */
+const tr = (key: string, fallback: string) => {
+  const value = i18n.t(key);
+  return value === key ? fallback : value;
+};
 
 export type Tone = 'neutral' | 'blue' | 'purple' | 'green' | 'amber' | 'red';
 
-export const statusLabel: Record<TicketStatus, string> = {
+const statusLabelFallback: Record<string, string> = {
   new: 'חדש',
   assigned: 'הוקצה',
   viewed: 'נצפה',
@@ -15,6 +23,9 @@ export const statusLabel: Record<TicketStatus, string> = {
   rejected: 'נדחה',
   reopened: 'נפתח מחדש',
 };
+export const statusLabel = new Proxy(statusLabelFallback, {
+  get: (target, key: string) => tr(`status.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const statusTone: Record<TicketStatus, Tone> = {
   new: 'neutral',
@@ -26,12 +37,15 @@ export const statusTone: Record<TicketStatus, Tone> = {
   reopened: 'amber',
 };
 
-export const priorityLabel: Record<Priority, string> = {
+const priorityLabelFallback: Record<string, string> = {
   low: 'נמוכה',
   normal: 'רגילה',
   high: 'גבוהה',
   urgent: 'דחופה',
 };
+export const priorityLabel = new Proxy(priorityLabelFallback, {
+  get: (target, key: string) => tr(`priority.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const priorityTone: Record<Priority, Tone> = {
   low: 'neutral',
@@ -40,13 +54,16 @@ export const priorityTone: Record<Priority, Tone> = {
   urgent: 'red',
 };
 
-export const slaLabel: Record<SlaState, string> = {
+const slaLabelFallback: Record<string, string> = {
   ok: 'בזמן',
   at_risk: 'בסיכון',
   breached: 'חריגה',
   met: 'עמד ביעד',
   none: 'ללא יעד',
 };
+export const slaLabel = new Proxy(slaLabelFallback, {
+  get: (target, key: string) => tr(`sla.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const slaTone: Record<SlaState, Tone> = {
   ok: 'green',
@@ -56,12 +73,15 @@ export const slaTone: Record<SlaState, Tone> = {
   none: 'neutral',
 };
 
-export const roleLabel: Record<Role, string> = {
+const roleLabelFallback: Record<string, string> = {
   requester: 'פונה',
   resolver: 'מטפל',
   approver: 'מאשר',
   admin: 'מנהל מערכת',
 };
+export const roleLabel = new Proxy(roleLabelFallback, {
+  get: (target, key: string) => tr(`role.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const roleTone: Record<Role, Tone> = {
   requester: 'neutral',
@@ -70,12 +90,15 @@ export const roleTone: Record<Role, Tone> = {
   admin: 'purple',
 };
 
-export const subtaskStatusLabel: Record<SubtaskStatus, string> = {
+const subtaskStatusLabelFallback: Record<string, string> = {
   open: 'פתוחה',
   in_progress: 'בביצוע',
   resolved: 'הושלמה',
   closed: 'נסגרה',
 };
+export const subtaskStatusLabel = new Proxy(subtaskStatusLabelFallback, {
+  get: (target, key: string) => tr(`subtaskStatus.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const subtaskStatusTone: Record<SubtaskStatus, Tone> = {
   open: 'neutral',
@@ -84,12 +107,15 @@ export const subtaskStatusTone: Record<SubtaskStatus, Tone> = {
   closed: 'neutral',
 };
 
-export const approvalStatusLabel: Record<ApprovalStatus, string> = {
+const approvalStatusLabelFallback: Record<string, string> = {
   pending: 'ממתין',
   approved: 'אושר',
   rejected: 'נדחה',
   cancelled: 'בוטל',
 };
+export const approvalStatusLabel = new Proxy(approvalStatusLabelFallback, {
+  get: (target, key: string) => tr(`approvalStatus.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const approvalStatusTone: Record<ApprovalStatus, Tone> = {
   pending: 'amber',
@@ -98,16 +124,22 @@ export const approvalStatusTone: Record<ApprovalStatus, Tone> = {
   cancelled: 'neutral',
 };
 
-export const assigneeTypeLabel: Record<AssigneeType, string> = {
+const assigneeTypeLabelFallback: Record<string, string> = {
   internal: 'פנימי',
   external: 'חיצוני',
 };
+export const assigneeTypeLabel = new Proxy(assigneeTypeLabelFallback, {
+  get: (target, key: string) => tr(`assigneeType.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
-export const channelLabel: Record<Channel, string> = {
+const channelLabelFallback: Record<string, string> = {
   email: 'דוא״ל',
   sms: 'מסרון',
   whatsapp: 'וואטסאפ',
 };
+export const channelLabel = new Proxy(channelLabelFallback, {
+  get: (target, key: string) => tr(`channel.${key}`, target[key] ?? key),
+}) as Record<string, string>;
 
 export const triggerLabel: Record<string, string> = {
   cost: 'חריגת עלות',
