@@ -179,7 +179,9 @@ export function Shell({ children }: { children: ReactNode }) {
         <header className="appbar">
           <span className="appbar__brand">
             <LifeBuoy aria-hidden />
-            {t('app.name')} · {t('app.council')}
+            {t('app.name')}
+            {/* Dropped below 960px, where the bar has no room for both. */}
+            <span className="appbar__brand-council"> · {t('app.council')}</span>
           </span>
 
           <span className="appbar__spacer" />

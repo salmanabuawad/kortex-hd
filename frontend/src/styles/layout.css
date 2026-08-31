@@ -29,8 +29,11 @@
 
 .app-frame {
   display: grid;
-  /* RTL: grid column 1 is the rightmost, so the rail takes it. */
-  grid-template-columns: var(--rail-width) 1fr;
+  /* RTL: grid column 1 is the rightmost, so the rail takes it.
+     minmax(0, 1fr) rather than 1fr: a bare 1fr track floors at min-content, so
+     one wide child (a grid, a long unbroken string) can push the whole column
+     past the viewport instead of scrolling inside itself. */
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
   min-height: 100vh;
   background: var(--app-bg);
 }
@@ -195,9 +198,10 @@
   min-height: 0;
 }
 
-/* Pages that are documents rather than grids get breathing room and a cap. */
+/* Document pages get a measure cap so text lines stay readable, but a generous
+   one -- 1180px left a third of a 1600px monitor empty. */
 .workarea__body--reading {
-  max-width: 1180px;
+  max-width: 1440px;
   width: 100%;
   margin: 0 auto;
   gap: var(--space-4);
@@ -314,8 +318,25 @@
    Responsive: the rail becomes a bottom bar, the grid becomes cards
    ========================================================================== */
 
+/* Laptops and small desktops: trim the frame so content keeps its width. */
+@media (max-width: 1180px) {
+  :root { --rail-width: 50px; }
+  .workarea__body { padding: var(--space-2); }
+  .workarea__body--reading { padding: var(--space-3) var(--space-3); }
+  .rail__item { width: 38px; height: 38px; }
+  .appbar__brand { font-size: var(--text-base); }
+}
+
+/* Tablet: the app bar has no room for the council name beside the product name. */
+@media (max-width: 960px) {
+  .appbar__brand .appbar__brand-council { display: none; }
+  .actionbar .toolbar__search { max-width: none; }
+}
+
 @media (max-width: 820px) {
-  .app-frame { grid-template-columns: 1fr; }
+  /* Same min-content guard as the desktop track: a bare 1fr floors at
+     min-content, which is what pushed the whole page sideways at ~800px. */
+  .app-frame { grid-template-columns: minmax(0, 1fr); }
 
   .rail {
     grid-column: 1;
@@ -325,11 +346,20 @@
     top: auto;
     height: auto;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: flex-start;
+    gap: var(--space-1);
     padding: var(--space-1) var(--space-2);
     border-top: 1px solid var(--shell-border);
     z-index: 80;
+    /* Scroll rather than squash: eleven destinations cannot each be a 44px
+       touch target on a 375px screen, and shrinking them below that fails
+       the minimum tap size. */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
   }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail__item { width: 44px; height: 44px; flex: 0 0 auto; }
   .rail__role, .rail__spacer { display: none; }
 
   .workarea { grid-column: 1; padding-bottom: 56px; }
