@@ -95,13 +95,13 @@ export default function TicketDetail() {
   ];
 
   return (
-    <div className="workarea__body workarea__body--reading">
-      <Button variant="ghost" icon={<ArrowLeft className="dir-icon" size={16} />} onClick={() => navigate('/tickets')}
-              style={{ marginBottom: 'var(--space-3)' }}>
-        חזרה לרשימת הקריאות
-      </Button>
-
+    <div className="workarea__body workarea__body--fill ticket-page">
       <header className="ticket-header">
+        <button type="button" className="ticket-page__back" onClick={() => navigate('/tickets')}>
+          <ArrowLeft className="dir-icon" size={16} />
+          חזרה לרשימת הקריאות
+        </button>
+
         <div className="ticket-header__top">
           <div className="ticket-header__title">
             <div className="row row--wrap" style={{ gap: 'var(--space-2)', marginBottom: 4 }}>
@@ -203,6 +203,7 @@ export default function TicketDetail() {
 
       <Tabs tabs={tabs} active={tab} onChange={(next) => setTab(next as TabId)} />
 
+      <div className="ticket-page__stage">
       {tab === 'overview' && (
         <OverviewTab
           ticket={data} subtasks={subtasks.data?.items ?? []}
@@ -249,6 +250,7 @@ export default function TicketDetail() {
       {tab === 'history' && (
         <HistoryTab items={activity.data?.items ?? []} loading={activity.loading} />
       )}
+      </div>
 
       {/* dialogs */}
       <TransferDialog
@@ -509,9 +511,9 @@ function ActivityTab({
   };
 
   return (
-    <Card>
+    <Card className="ticket-page__panel">
       <CardHeader title="התכתבות ואירועים" />
-        <div className="card__body stack" style={{ gap: 'var(--space-5)' }}>
+        <div className="card__body stack ticket-page__converse">
           {loading ? <SkeletonRows rows={4} /> : items.length === 0 ? (
             <EmptyState title="אין עדיין תגובות" text="כל הודעה או פעולה יופיעו כאן." />
           ) : (
