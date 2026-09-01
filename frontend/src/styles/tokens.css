@@ -55,7 +55,7 @@
   --slate-50:  #f4f7f5;
 
   /* --- semantic --------------------------------------------------------- */
-  --app-bg: #d5ddd8;
+  --app-bg: #e9efec;
   --surface: #ffffff;
   --surface-subtle: #eef3f0;
   --surface-muted: var(--surface-subtle);
@@ -89,11 +89,11 @@
   --danger-soft: var(--red-100);
   --danger-text: var(--red-600);
 
-  --shell-bg: var(--forest-900);
-  --shell-bg-hover: var(--forest-700);
-  --shell-text: #c5ddd6;
+  --shell-bg: #1e6a62;
+  --shell-bg-hover: #185850;
+  --shell-text: #edf7f5;
   --shell-text-active: #ffffff;
-  --shell-border: rgba(197, 221, 214, 0.16);
+  --shell-border: rgba(237, 247, 245, 0.22);
 
   /* --- typography ------------------------------------------------------- */
   --font: "Assistant", "Heebo", "Segoe UI", system-ui, -apple-system, sans-serif;
