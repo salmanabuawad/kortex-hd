@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Activity, BarChart3, BookOpen, ClipboardList, Cog, HelpCircle, LayoutDashboard, LifeBuoy,
+  Activity, BarChart3, BookOpen, ClipboardList, Cog, HelpCircle, Layers, LayoutDashboard,
   LogOut, Search, ShieldCheck, SlidersHorizontal, Table2, Users, Workflow,
 } from 'lucide-react';
 
@@ -31,7 +31,7 @@ const RAIL: RailItem[] = [
     roles: ['resolver', 'approver', 'admin'] },
   { to: '/knowledge', icon: <BookOpen />, labelKey: 'nav.knowledge',
     roles: ['resolver', 'approver', 'admin'] },
-  { to: '/categories', icon: <LifeBuoy />, labelKey: 'nav.categories', roles: ['admin'] },
+  { to: '/categories', icon: <Layers />, labelKey: 'nav.categories', roles: ['admin'] },
   { to: '/directory', icon: <Users />, labelKey: 'nav.directory', roles: ['admin'] },
   { to: '/workflows', icon: <Workflow />, labelKey: 'nav.workflows', roles: ['admin'] },
   { to: '/analytics', icon: <BarChart3 />, labelKey: 'nav.analytics', roles: ['admin'] },
@@ -226,7 +226,7 @@ export function Shell({ children }: { children: ReactNode }) {
             aria-label={t('nav.knowledge')}
             onClick={() => navigate(isStaff(user) ? '/knowledge' : '/tickets/new')}
           >
-            <HelpCircle />
+            {isStaff(user) ? <BookOpen /> : <HelpCircle />}
           </button>
 
           <div className="appbar__menu">

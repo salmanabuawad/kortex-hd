@@ -92,7 +92,7 @@ export function CardHeader({
 }: { title: string; action?: ReactNode; icon?: ReactNode }) {
   return (
     <header className="card__header">
-      {icon}
+      {icon && <span className="card__header-icon">{icon}</span>}
       <h3 className="card__title">{title}</h3>
       {action}
     </header>

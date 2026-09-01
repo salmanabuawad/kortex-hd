@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRightLeft, CheckCircle2, Clock, Download, ExternalLink, FileText, History,
-  Link2, MessageSquare, Paperclip, Plus, RotateCcw, ShieldCheck, Trash2, Upload,
+  Link2, ListTodo, MessageSquare, Paperclip, Plus, RotateCcw, ShieldCheck, StickyNote, Trash2, Upload,
   UserRound, X, XCircle,
 } from 'lucide-react';
 
@@ -86,7 +86,7 @@ export default function TicketDetail() {
     { id: 'overview', label: 'סקירה', icon: <FileText size={15} /> },
     { id: 'activity', label: 'התכתבות', icon: <MessageSquare size={15} />,
       count: activity.data?.items.filter((i) => i.kind !== 'event').length },
-    { id: 'subtasks', label: 'משימות משנה', icon: <ArrowRightLeft size={15} />,
+    { id: 'subtasks', label: 'משימות משנה', icon: <ListTodo size={15} />,
       count: subtasks.data?.items.length },
     { id: 'files', label: 'קבצים', icon: <Paperclip size={15} />, count: files.data?.items.length },
     { id: 'approvals', label: 'אישורים', icon: <ShieldCheck size={15} />,
@@ -130,7 +130,7 @@ export default function TicketDetail() {
                       onClick={() => { setComposeInternal(false); setTab('activity'); }}>
                 תגובה למבקש
               </Button>
-              <Button variant="secondary" icon={<MessageSquare size={16} />}
+              <Button variant="secondary" icon={<StickyNote size={16} />}
                       onClick={() => { setComposeInternal(true); setTab('activity'); }}>
                 הערה פנימית
               </Button>
@@ -138,7 +138,7 @@ export default function TicketDetail() {
                       onClick={() => setTransferOpen(true)}>
                 העברה
               </Button>
-              <Button variant="secondary" icon={<Plus size={16} />}
+              <Button variant="secondary" icon={<ListTodo size={16} />}
                       onClick={() => setSubtaskOpen(true)}>
                 משימת משנה
               </Button>
@@ -527,10 +527,12 @@ function ActivityTab({
               <div className="composer__tabs" role="group" aria-label="סוג התגובה">
                 <button type="button" className="composer__tab" aria-pressed={!internal}
                         onClick={() => onInternalChange(false)}>
+                  <MessageSquare />
                   תגובה למבקש
                 </button>
                 <button type="button" className="composer__tab" aria-pressed={internal}
                         onClick={() => onInternalChange(true)}>
+                  <StickyNote />
                   הערה פנימית
                 </button>
               </div>

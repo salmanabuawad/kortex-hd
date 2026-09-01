@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Bell, Building2, Clock, Cog, Puzzle, Save, ShieldCheck, SlidersHorizontal, Tags,
+  Bell, Building2, Clock, Cog, Puzzle, Save, ShieldCheck, Tags,
 } from 'lucide-react';
 
 import { get, patch, put } from '../lib/api';
@@ -233,7 +233,7 @@ function RequestTypeSettings({
 function Integrations() {
   return (
     <Card>
-      <CardHeader title="ממשקים חיצוניים" icon={<SlidersHorizontal size={17} />} />
+      <CardHeader title="ממשקים חיצוניים" icon={<Puzzle size={17} />} />
       <div className="card__body stack">
         <Banner tone="warning" title="לא הוגדרו ספקים">
           המערכת בנויה עם שכבת ספקים מופשטת עבור דואר, מסרונים ווואטסאפ. כרגע פעיל

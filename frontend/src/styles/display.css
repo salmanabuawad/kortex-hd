@@ -142,9 +142,15 @@
   color: var(--banner-blue);
   border-bottom-width: 4px;
 }
+[data-contrast="contrast"] .pagehead__icon,
+[data-contrast="contrast"] .titlebar__icon {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+}
 [data-contrast="contrast"] .titlebar {
   border: 2px solid #000000;
-  color: #ffffff;
+  color: #000000;
 }
 [data-contrast="contrast"] .appbar { border-bottom: 2px solid #ffffff; }
 [data-contrast="contrast"] .appfooter { border-top: 2px solid #000000; }
@@ -207,7 +213,7 @@
   --ag-background-color: var(--surface);
   --ag-header-background-color: var(--surface-subtle);
   --ag-odd-row-background-color: var(--surface);
-  --ag-row-hover-color: var(--teal-50);
+  --ag-row-hover-color: var(--primary-soft);
   --ag-selected-row-background-color: var(--primary-soft);
   --ag-border-color: var(--border);
   --ag-header-foreground-color: var(--text);
@@ -240,7 +246,7 @@
   overflow: visible;
 }
 .ag-theme-kortex .ag-row { cursor: pointer; border-bottom-color: var(--border); }
-.ag-theme-kortex .ag-row-hover { background: var(--teal-50); }
+.ag-theme-kortex .ag-row-hover { background: var(--primary-soft); }
 .ag-theme-kortex .ag-row-focus { background: var(--primary-soft); }
 .ag-theme-kortex .ag-cell {
   display: flex;

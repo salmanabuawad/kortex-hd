@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, LifeBuoy } from 'lucide-react';
+import { Building2, KeyRound } from 'lucide-react';
 
 import { post } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -56,7 +56,7 @@ export default function ChangePassword() {
       <main className="login__main">
         <div className="login__card">
           <div className="login__brand-block">
-            <span className="login__mark"><LifeBuoy size={20} /></span>
+            <span className="login__mark"><Building2 size={20} /></span>
             <div>
               <div className="appbar__brand-name">מוקד שירות</div>
               <div className="appbar__brand-council">מועצה מקומית בוקעאתא</div>

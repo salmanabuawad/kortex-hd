@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LifeBuoy, LogIn } from 'lucide-react';
+import { Building2, Eye, EyeOff, LogIn } from 'lucide-react';
 
 import { useAuth } from '../lib/auth';
 import { Banner, Button, TextField } from '../components/ui';
@@ -41,7 +41,7 @@ export default function Login() {
       <main className="login__main">
         <div className="login__card">
           <div className="login__brand-block">
-            <span className="login__mark"><LifeBuoy size={20} /></span>
+            <span className="login__mark"><Building2 size={20} /></span>
             <div>
               <div className="appbar__brand-name">מוקד שירות</div>
               <div className="appbar__brand-council">מועצה מקומית בוקעאתא</div>

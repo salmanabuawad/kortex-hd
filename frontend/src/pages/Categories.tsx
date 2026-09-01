@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import {
-  Archive, Building2, Clock, Database, LifeBuoy, Network, Pencil, Plus, Printer, ShieldCheck,
+  Archive, Building2, Clock, Database, Layers, LifeBuoy, Network, Pencil, Plus, Printer, ShieldCheck,
 } from 'lucide-react';
 
 import { del, get, patch, post } from '../lib/api';
@@ -60,7 +60,7 @@ export default function Categories() {
   return (
     <PageFrame
       reading
-      icon={<LifeBuoy />}
+      icon={<Layers />}
       title="קטגוריות שירות"
         summary="כל קטגוריה קובעת מי מטפל, מהו זמן התקן, ומתי נדרש אישור"
         actions={

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Building2, Check, Database, LifeBuoy, Lightbulb,
-  Network, Plus, Printer, Send, ShieldCheck, Sparkles,
+  Network, Printer, Send, ShieldCheck, Sparkles, TicketPlus,
 } from 'lucide-react';
 
 import { get, post } from '../lib/api';
@@ -179,7 +179,7 @@ export default function NewTicket() {
   return (
     <PageFrame
       fill
-      icon={<Plus />}
+      icon={<TicketPlus />}
       title="פתיחת קריאה חדשה"
       summary="שלושה צעדים קצרים — קטגוריה, סוג, ופרטים"
       actions={

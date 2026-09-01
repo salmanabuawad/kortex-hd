@@ -37,7 +37,7 @@
   --green-100: #d9f0e3;
 
   --amber-600: #9a5b00;
-  --amber-500: #c2410c;
+  --amber-500: #c97800;
   --amber-100: #fde8d0;
 
   --red-600: #b42318;
@@ -137,9 +137,9 @@
 
   /* --- shadows: used sparingly ------------------------------------------ */
   --shadow-xs: none;
-  --shadow-sm: 0 1px 2px rgba(20, 34, 30, 0.05);
-  --shadow-md: 0 4px 14px rgba(20, 34, 30, 0.07);
-  --shadow-lg: 0 12px 28px rgba(20, 34, 30, 0.1);
+  --shadow-sm: 0 1px 2px rgba(12, 26, 51, 0.06);
+  --shadow-md: 0 4px 14px rgba(12, 26, 51, 0.08);
+  --shadow-lg: 0 12px 28px rgba(12, 26, 51, 0.12);
   --shadow-focus: 0 0 0 3px rgba(37, 99, 196, 0.24);
 
   /* --- layout ----------------------------------------------------------- */

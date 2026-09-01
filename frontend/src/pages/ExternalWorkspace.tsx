@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  CalendarDays, CheckCircle2, Download, FileText, LifeBuoy, Link2Off, Loader2, Paperclip,
+  Building2, CalendarDays, CheckCircle2, Download, FileText, Link2Off, Loader2, Paperclip,
   Send, Upload,
 } from 'lucide-react';
 
@@ -275,7 +275,7 @@ function GuestBar({ right }: { right?: React.ReactNode }) {
   return (
     <header className="guest__bar">
       <div className="guest__bar-inner">
-        <span className="login__mark"><LifeBuoy size={18} /></span>
+        <span className="login__mark"><Building2 size={18} /></span>
         <div className="grow">
           <div className="appbar__brand-name">משימה לטיפול</div>
           <div className="appbar__brand-council">{COUNCIL}</div>
