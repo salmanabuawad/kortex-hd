@@ -420,6 +420,87 @@
 .choice__title { font-size: var(--text-base); font-weight: 600; }
 .choice__desc { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.4; }
 
+.wizard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.wizard__steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+.wizard__step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+.wizard__line {
+  width: 36px;
+  height: 2px;
+  background: var(--border);
+  margin-inline: var(--space-2);
+}
+.wizard__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.wizard__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.wizard__step--done .wizard__dot {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.wizard__step--done .wizard__label { color: var(--text-secondary); }
+.wizard__step--current .wizard__line,
+.wizard__step--done .wizard__line { background: var(--success); }
+.wizard__step--current .wizard__dot {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+.wizard__step--current .wizard__label { color: var(--primary); }
+.wizard__pane {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.wizard__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
 .segmented {
   display: inline-flex;
   padding: 3px;
@@ -1209,8 +1290,8 @@ a.kpi:hover, button.kpi:hover { border-color: var(--border-strong); background: 
   place-items: center;
   padding: var(--space-6);
   background:
-    radial-gradient(900px 460px at 85% -8%, rgba(26, 155, 145, 0.16), transparent 55%),
-    radial-gradient(700px 380px at 0% 100%, rgba(11, 36, 32, 0.07), transparent 50%),
+    radial-gradient(900px 460px at 85% -8%, rgba(59, 120, 196, 0.18), transparent 55%),
+    radial-gradient(700px 380px at 0% 100%, rgba(19, 40, 76, 0.08), transparent 50%),
     var(--app-bg);
 }
 .login__aside { display: none; }

@@ -70,21 +70,21 @@
    and no reliance on a subtle background to separate surfaces. */
 
 [data-contrast="light"] {
-  --app-bg: #f3f6f4;
-  --surface-subtle: #eef3f1;
-  --surface-muted: #eef3f1;
-  --surface-sunken: #e2eae6;
-  --border: #dce6e2;
+  --app-bg: #f4f7fb;
+  --surface-subtle: #eef2f8;
+  --surface-muted: #eef2f8;
+  --surface-sunken: #e2e8f2;
+  --border: #dce3ee;
 }
 
 [data-contrast="dark"] {
-  --app-bg: #dce6e2;
-  --surface-muted: #eef3f1;
-  --surface-sunken: #cfdad5;
-  --border: #b8c5bf;
-  --border-strong: #8a9b96;
-  --text-secondary: #2a3d38;
-  --text-muted: #3f534e;
+  --app-bg: #dce3ee;
+  --surface-muted: #eef2f8;
+  --surface-sunken: #c5cddb;
+  --border: #93a0b5;
+  --border-strong: #6b7a93;
+  --text-secondary: #1a3a6b;
+  --text-muted: #3d4a63;
 }
 
 [data-contrast="contrast"] {
@@ -100,10 +100,10 @@
   --border: #000000;
   --border-strong: #000000;
 
-  --primary: #064d47;
-  --primary-hover: #043833;
-  --primary-soft: #d7f0ec;
-  --primary-border: #064d47;
+  --primary: #0b3fae;
+  --primary-hover: #082e80;
+  --primary-soft: #e8eeff;
+  --primary-border: #0b3fae;
 
   --success: #0a6b33;
   --success-text: #0a6b33;
@@ -113,7 +113,7 @@
   --danger: #a80000;
   --danger-text: #a80000;
   --danger-soft: #ffe8e8;
-  --accent: #0a554f;
+  --accent: #1e4a8c;
 
   --shadow-xs: none;
   --shadow-sm: none;
@@ -183,7 +183,7 @@
 /* Status colours must stay distinguishable without relying on hue alone, so
    every chip also carries a border in this mode (set above) and darker text. */
 [data-contrast="contrast"] .chip--neutral { background: #f2f2f2; color: #000000; }
-[data-contrast="contrast"] .chip--blue { background: #d7f0ec; color: #064d47; }
+[data-contrast="contrast"] .chip--blue { background: #e8eeff; color: #0b3fae; }
 [data-contrast="contrast"] .chip--purple { background: #e4eef4; color: #1e3a4c; }
 [data-contrast="contrast"] .chip--green { background: #e2f7e9; color: #0a6b33; }
 [data-contrast="contrast"] .chip--amber { background: #fff3e0; color: #7a4200; }

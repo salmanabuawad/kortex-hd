@@ -2,35 +2,35 @@
    from here -- components never hard-code a hex value. */
 
 :root {
-  /* --- palette: civic pine + clear teal on sage stone -------------------- */
-  --forest-950: #061512;
-  --forest-900: #0b2420;
-  --forest-800: #12352f;
-  --forest-700: #1a463e;
-  --forest-600: #25574d;
+  /* --- palette: civic blue on cool stone --------------------------------- */
+  --forest-950: #0c1a33;
+  --forest-900: #13284c;
+  --forest-800: #1a3a6b;
+  --forest-700: #24508c;
+  --forest-600: #2f64a8;
 
-  --teal-800: #0a554f;
-  --teal-700: #0c6b63;
-  --teal-600: #0e8077;
-  --teal-500: #1a9b91;
-  --teal-400: #2bb5aa;
-  --teal-100: #c5ebe7;
-  --teal-50:  #e6f6f4;
+  --teal-800: #1e4a8c;
+  --teal-700: #2563c4;
+  --teal-600: #3b7ad9;
+  --teal-500: #4c8ee8;
+  --teal-400: #6ba3f0;
+  --teal-100: #d6e6fb;
+  --teal-50:  #eef4fc;
 
-  --navy-900: #061512;
-  --navy-800: #0b2420;
-  --navy-700: #12352f;
-  --navy-600: #1a463e;
-  --navy-500: #25574d;
+  --navy-900: #0c1a33;
+  --navy-800: #13284c;
+  --navy-700: #1a3a6b;
+  --navy-600: #24508c;
+  --navy-500: #2f64a8;
 
-  --blue-600: var(--teal-800);
-  --blue-500: var(--teal-700);
-  --blue-400: var(--teal-500);
-  --blue-100: var(--teal-100);
-  --blue-50:  var(--teal-50);
+  --blue-600: #1e4a8c;
+  --blue-500: #2563c4;
+  --blue-400: #4c8ee8;
+  --blue-100: #d6e6fb;
+  --blue-50:  #eef4fc;
 
-  --purple-600: #3d5c72;
-  --purple-100: #e4eef4;
+  --purple-600: #4a5d8c;
+  --purple-100: #e6eaf6;
 
   --green-600: #1b6b42;
   --green-500: #1f7f4e;
@@ -44,38 +44,38 @@
   --red-500: #c9372c;
   --red-100: #f8e4e1;
 
-  --slate-900: #14221e;
-  --slate-700: #3f534e;
-  --slate-600: #4d635d;
-  --slate-500: #5c6f6a;
-  --slate-400: #8a9b96;
-  --slate-300: #c5d0cb;
-  --slate-200: #dce4e0;
-  --slate-100: #eef3f1;
-  --slate-50:  #f4f7f5;
+  --slate-900: #152033;
+  --slate-700: #3d4a63;
+  --slate-600: #51607a;
+  --slate-500: #6b7a93;
+  --slate-400: #93a0b5;
+  --slate-300: #c5cddb;
+  --slate-200: #dce3ee;
+  --slate-100: #eef2f8;
+  --slate-50:  #f5f7fb;
 
   /* --- semantic --------------------------------------------------------- */
-  --app-bg: #e9efec;
+  --app-bg: #e8eef6;
   --surface: #ffffff;
-  --surface-subtle: #eef3f0;
+  --surface-subtle: #f3f6fb;
   --surface-muted: var(--surface-subtle);
-  --surface-sunken: #dce4e0;
+  --surface-sunken: #e2e8f2;
 
-  --text: #0f1c19;
-  --text-secondary: #35514b;
-  --text-muted: #54706a;
+  --text: #152033;
+  --text-secondary: #3d4a63;
+  --text-muted: #6b7a93;
   --text-inverse: #ffffff;
 
-  --border: #c3d0c9;
-  --border-strong: #a7b8b0;
+  --border: #c5cddb;
+  --border-strong: #93a0b5;
 
-  --primary: var(--teal-700);
-  --primary-hover: var(--teal-800);
-  --primary-soft: var(--teal-50);
-  --primary-border: var(--teal-100);
+  --primary: var(--blue-500);
+  --primary-hover: var(--blue-600);
+  --primary-soft: var(--blue-50);
+  --primary-border: var(--blue-100);
 
-  --accent: var(--teal-500);
-  --accent-soft: var(--teal-50);
+  --accent: var(--blue-400);
+  --accent-soft: var(--blue-50);
 
   --success: var(--green-500);
   --success-soft: var(--green-100);
@@ -89,11 +89,11 @@
   --danger-soft: var(--red-100);
   --danger-text: var(--red-600);
 
-  --shell-bg: #1e6a62;
-  --shell-bg-hover: #185850;
-  --shell-text: #edf7f5;
+  --shell-bg: #3b78c4;
+  --shell-bg-hover: #2f64a8;
+  --shell-text: #eef4fc;
   --shell-text-active: #ffffff;
-  --shell-border: rgba(237, 247, 245, 0.22);
+  --shell-border: rgba(238, 244, 252, 0.28);
 
   /* --- typography ------------------------------------------------------- */
   --font: "Assistant", "Heebo", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -140,7 +140,7 @@
   --shadow-sm: 0 1px 2px rgba(20, 34, 30, 0.05);
   --shadow-md: 0 4px 14px rgba(20, 34, 30, 0.07);
   --shadow-lg: 0 12px 28px rgba(20, 34, 30, 0.1);
-  --shadow-focus: 0 0 0 3px rgba(12, 107, 99, 0.24);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 196, 0.24);
 
   /* --- layout ----------------------------------------------------------- */
   --sidebar-width: 250px;

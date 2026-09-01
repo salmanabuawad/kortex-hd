@@ -1,8 +1,8 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowLeft, Building2, Database, LifeBuoy, Lightbulb, Network, Plus,
-  Printer, Send, ShieldCheck, Sparkles,
+  AlertTriangle, ArrowLeft, ArrowRight, Building2, Check, Database, LifeBuoy, Lightbulb,
+  Network, Plus, Printer, Send, ShieldCheck, Sparkles,
 } from 'lucide-react';
 
 import { get, post } from '../lib/api';
@@ -30,6 +30,8 @@ const ICONS: Record<string, React.ReactNode> = {
 
 const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
+type StepId = 'category' | 'type' | 'details';
+
 export default function NewTicket() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -37,6 +39,7 @@ export default function NewTicket() {
   const categories = useAsync<{ items: Category[] }>(
     () => get<{ items: Category[] }>('/categories'), []);
 
+  const [step, setStep] = useState<StepId>('category');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [requestTypeId, setRequestTypeId] = useState<number | null>(null);
   const [subject, setSubject] = useState('');
@@ -57,8 +60,6 @@ export default function NewTicket() {
     [category, requestTypeId],
   );
 
-  // Known issues for the chosen category become an inline hint, so a user can
-  // solve the problem without opening a ticket at all.
   const known = useAsync<{ items: KnownIssue[] }>(
     () => (categoryId
       ? get<{ items: KnownIssue[] }>(`/known-issues?category_id=${categoryId}`)
@@ -67,8 +68,16 @@ export default function NewTicket() {
   );
 
   const isNewService = requestType?.key === 'new_service';
+  const hasTypes = (category?.request_types.length ?? 0) > 0;
 
-  // Mirror the server rules so the requester is told before submitting.
+  const steps = useMemo<StepId[]>(
+    () => (hasTypes ? ['category', 'type', 'details'] : ['category', 'details']),
+    [hasTypes],
+  );
+  const stepIndex = Math.max(0, steps.indexOf(step));
+  const isFirst = stepIndex <= 0;
+  const isLast = stepIndex === steps.length - 1;
+
   const approvalNotice = useMemo(() => {
     if (!category) return null;
     const reasons: string[] = [];
@@ -86,17 +95,53 @@ export default function NewTicket() {
     return reasons.length ? reasons : null;
   }, [category, isNewService, cost, hours]);
 
+  const goTo = (id: StepId) => {
+    setError('');
+    setStep(id);
+  };
+
+  const goNext = () => {
+    if (step === 'category' && !categoryId) {
+      setError('יש לבחור קטגוריה');
+      return;
+    }
+    const next = steps[stepIndex + 1];
+    if (next) goTo(next);
+  };
+
+  const goBack = () => {
+    const prev = steps[stepIndex - 1];
+    if (prev) goTo(prev);
+  };
+
   const chooseCategory = (next: Category) => {
     setCategoryId(next.id);
     setPriority(next.default_priority);
-    // Keep the request type only if the new category also offers it.
     setRequestTypeId((current) =>
       next.request_types.some((rt) => rt.id === current) ? current : null);
+    setError('');
+    setStep(next.request_types.length > 0 ? 'type' : 'details');
   };
+
+  const chooseType = (type: RequestType) => {
+    setRequestTypeId(type.id);
+    setError('');
+    setStep('details');
+  };
+
+  useEffect(() => {
+    if (step === 'type' && !hasTypes) {
+      setStep(categoryId ? 'details' : 'category');
+    }
+  }, [step, hasTypes, categoryId]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!categoryId) { setError('יש לבחור קטגוריה'); return; }
+    if (!isLast) {
+      goNext();
+      return;
+    }
+    if (!categoryId) { setError('יש לבחור קטגוריה'); goTo('category'); return; }
     if (subject.trim().length < 3) { setError('יש להזין נושא לקריאה'); return; }
     if (!description.trim()) { setError('יש לתאר את הבקשה'); return; }
 
@@ -125,63 +170,89 @@ export default function NewTicket() {
     return <ErrorState message={categories.error} onRetry={categories.reload} />;
   }
 
+  const stepLabel: Record<StepId, string> = {
+    category: 'במה מדובר?',
+    type: 'סוג הפנייה',
+    details: 'פרטי הפנייה',
+  };
+
   return (
     <PageFrame
-      reading
+      fill
       icon={<Plus />}
       title="פתיחת קריאה חדשה"
-      summary="איך אפשר לעזור? בחרו קטגוריה ואז תארו את הבקשה"
-        actions={
-          <Button variant="ghost" icon={<ArrowLeft className="dir-icon" size={16} />} onClick={() => navigate(-1)}>
-            חזרה
-          </Button>
-        }
+      summary="שלושה צעדים קצרים — קטגוריה, סוג, ופרטים"
+      actions={
+        <Button variant="ghost" icon={<ArrowLeft className="dir-icon" size={16} />} onClick={() => navigate(-1)}>
+          חזרה
+        </Button>
+      }
     >
+      <form className="wizard" onSubmit={submit}>
+        <ol className="wizard__steps" aria-label="שלבי פתיחת הקריאה">
+          {steps.map((id, index) => {
+            const state = index < stepIndex ? 'done' : index === stepIndex ? 'current' : 'todo';
+            return (
+              <li key={id} className={`wizard__step wizard__step--${state}`}>
+                {index > 0 && <span className="wizard__line" aria-hidden />}
+                <button
+                  type="button"
+                  className="wizard__dot"
+                  aria-current={state === 'current' ? 'step' : undefined}
+                  disabled={index > stepIndex}
+                  onClick={() => { if (index <= stepIndex) goTo(id); }}
+                >
+                  {state === 'done' ? <Check size={14} /> : index + 1}
+                </button>
+                <span className="wizard__label">{stepLabel[id]}</span>
+              </li>
+            );
+          })}
+        </ol>
 
-      <form onSubmit={submit}>
-        <div className="stack">
-          {error && <Banner tone="danger">{error}</Banner>}
+        {error && <Banner tone="danger">{error}</Banner>}
 
-          {/* Step 1 — category */}
-          <Card>
-            <CardHeader title="במה מדובר?" />
-            <div className="card__body">
-              {categories.loading ? (
-                <div className="choices choices--3">
-                  {Array.from({ length: 5 }, (_, i) => <Skeleton key={i} height={64} radius={10} />)}
-                </div>
-              ) : (
-                <div className="choices choices--3">
-                  {categories.data?.items.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      className={`choice${categoryId === item.id ? ' choice--selected' : ''}`}
-                      onClick={() => chooseCategory(item)}
-                      aria-pressed={categoryId === item.id}
-                    >
-                      <span className="choice__icon">
-                        {ICONS[item.icon] ?? <LifeBuoy size={17} />}
-                      </span>
-                      <span className="grow">
-                        <span className="choice__title" style={{ display: 'block' }}>
-                          {item.name}
-                        </span>
-                        {item.description && (
-                          <span className="choice__desc">{item.description}</span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Step 2 — request type, only once a category is chosen */}
-          {category && category.request_types.length > 0 && (
+        <div className="wizard__pane">
+          {step === 'category' && (
             <Card>
-                <CardHeader title="סוג הפנייה" />
+              <CardHeader title="במה מדובר?" />
+              <div className="card__body">
+                {categories.loading ? (
+                  <div className="choices choices--3">
+                    {Array.from({ length: 5 }, (_, i) => <Skeleton key={i} height={64} radius={10} />)}
+                  </div>
+                ) : (
+                  <div className="choices choices--3">
+                    {categories.data?.items.map((item) => (
+                      <button
+                        type="button"
+                        key={item.id}
+                        className={`choice${categoryId === item.id ? ' choice--selected' : ''}`}
+                        onClick={() => chooseCategory(item)}
+                        aria-pressed={categoryId === item.id}
+                      >
+                        <span className="choice__icon">
+                          {ICONS[item.icon] ?? <LifeBuoy size={17} />}
+                        </span>
+                        <span className="grow">
+                          <span className="choice__title" style={{ display: 'block' }}>
+                            {item.name}
+                          </span>
+                          {item.description && (
+                            <span className="choice__desc">{item.description}</span>
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {step === 'type' && category && (
+            <Card>
+              <CardHeader title="סוג הפנייה" />
               <div className="card__body">
                 <div className="choices choices--2">
                   {category.request_types.map((type: RequestType) => (
@@ -189,7 +260,7 @@ export default function NewTicket() {
                       type="button"
                       key={type.id}
                       className={`choice${requestTypeId === type.id ? ' choice--selected' : ''}`}
-                      onClick={() => setRequestTypeId(type.id)}
+                      onClick={() => chooseType(type)}
                       aria-pressed={requestTypeId === type.id}
                     >
                       <span className="choice__icon">
@@ -210,99 +281,106 @@ export default function NewTicket() {
             </Card>
           )}
 
-          {/* Known issues for this category */}
-          {categoryId && (known.data?.items.length ?? 0) > 0 && (
-            <Banner tone="info" title="אולי תוכלו לפתור את זה מיד">
-              <ul className="stack" style={{ gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                {known.data?.items.slice(0, 3).map((issue) => (
-                  <li key={issue.id}>
-                    <strong>{issue.title}</strong>
-                    <div style={{ fontSize: 'var(--text-sm)' }}>{issue.summary}</div>
-                  </li>
-                ))}
-              </ul>
-            </Banner>
-          )}
-
-          {/* Step 3 — the details */}
-          {categoryId && (
-            <Card>
-              <CardHeader title="פרטי הפנייה" />
-              <div className="card__body stack">
-                <TextField
-                  label="נושא" required maxLength={220}
-                  value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
-                  placeholder="למשל: אין חיבור לאינטרנט במשרד קומה 2"
-                />
-                <TextAreaField
-                  label="תיאור מפורט" required
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="מה קרה, ממתי, ומה כבר ניסיתם? ככל שיהיו יותר פרטים, הטיפול יהיה מהיר יותר."
-                  hint="ציינו מיקום, שעה ומספר עמדה אם רלוונטי"
-                />
-
-                <div className="grid grid--3">
-                  <SelectField
-                    label="דחיפות"
-                    value={priority}
-                    onChange={(event) => setPriority(event.target.value as Priority)}
-                  >
-                    {PRIORITIES.map((value) => (
-                      <option key={value} value={value}>{priorityLabel[value]}</option>
+          {step === 'details' && categoryId && (
+            <div className="stack">
+              {categoryId && (known.data?.items.length ?? 0) > 0 && (
+                <Banner tone="info" title="אולי תוכלו לפתור את זה מיד">
+                  <ul className="stack" style={{ gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                    {known.data?.items.slice(0, 3).map((issue) => (
+                      <li key={issue.id}>
+                        <strong>{issue.title}</strong>
+                        <div style={{ fontSize: 'var(--text-sm)' }}>{issue.summary}</div>
+                      </li>
                     ))}
-                  </SelectField>
+                  </ul>
+                </Banner>
+              )}
 
-                  {isNewService && (
-                    <>
-                      <TextField
-                        label="עלות משוערת (₪)" type="number" min={0} step={50}
-                        value={cost}
-                        onChange={(event) => setCost(event.target.value)}
-                        hint={category?.cost_threshold != null
-                          ? `מעל ${formatCurrency(category.cost_threshold)} נדרש אישור`
-                          : undefined}
-                      />
-                      <TextField
-                        label="היקף עבודה משוער (שעות)" type="number" min={0} step={1}
-                        value={hours}
-                        onChange={(event) => setHours(event.target.value)}
-                        hint={category?.hours_threshold != null
-                          ? `מעל ${formatHours(category.hours_threshold)} נדרש אישור`
-                          : undefined}
-                      />
-                    </>
+              <Card>
+                <CardHeader title="פרטי הפנייה" />
+                <div className="card__body stack">
+                  <TextField
+                    label="נושא" required maxLength={220}
+                    value={subject}
+                    onChange={(event) => setSubject(event.target.value)}
+                    placeholder="למשל: אין חיבור לאינטרנט במשרד קומה 2"
+                  />
+                  <TextAreaField
+                    label="תיאור מפורט" required
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder="מה קרה, ממתי, ומה כבר ניסיתם? ככל שיהיו יותר פרטים, הטיפול יהיה מהיר יותר."
+                    hint="ציינו מיקום, שעה ומספר עמדה אם רלוונטי"
+                  />
+
+                  <div className="grid grid--3">
+                    <SelectField
+                      label="דחיפות"
+                      value={priority}
+                      onChange={(event) => setPriority(event.target.value as Priority)}
+                    >
+                      {PRIORITIES.map((value) => (
+                        <option key={value} value={value}>{priorityLabel[value]}</option>
+                      ))}
+                    </SelectField>
+
+                    {isNewService && (
+                      <>
+                        <TextField
+                          label="עלות משוערת (₪)" type="number" min={0} step={50}
+                          value={cost}
+                          onChange={(event) => setCost(event.target.value)}
+                          hint={category?.cost_threshold != null
+                            ? `מעל ${formatCurrency(category.cost_threshold)} נדרש אישור`
+                            : undefined}
+                        />
+                        <TextField
+                          label="היקף עבודה משוער (שעות)" type="number" min={0} step={1}
+                          value={hours}
+                          onChange={(event) => setHours(event.target.value)}
+                          hint={category?.hours_threshold != null
+                            ? `מעל ${formatHours(category.hours_threshold)} נדרש אישור`
+                            : undefined}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  {approvalNotice && (
+                    <Banner tone="warning" title="הפנייה תועבר לאישור">
+                      {approvalNotice.join(' · ')}. הטיפול יתחיל לאחר קבלת האישור.
+                    </Banner>
                   )}
                 </div>
-
-                {approvalNotice && (
-                  <Banner tone="warning" title="הפנייה תועבר לאישור">
-                    {approvalNotice.join(' · ')}. הטיפול יתחיל לאחר קבלת האישור.
-                  </Banner>
-                )}
-              </div>
-            </Card>
-          )}
-
-          {categoryId && (
-            <div className="row" style={{ justifyContent: 'flex-start', gap: 'var(--space-2)' }}>
-              <Button
-                type="submit" variant="primary" size="lg"
-                loading={busy} icon={<Send size={17} />}
-              >
-                שליחת הקריאה
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => navigate('/tickets')}>
-                ביטול
-              </Button>
-              {category?.sla_hours && (
-                <span className="cell-meta" style={{ marginInlineStart: 'auto' }}>
-                  <Lightbulb size={13} style={{ verticalAlign: -2 }} />{' '}
-                  יעד טיפול בקטגוריה זו: {category.sla_hours} שעות
-                </span>
-              )}
+              </Card>
             </div>
+          )}
+        </div>
+
+        <div className="wizard__nav">
+          <Button type="button" variant="ghost" disabled={isFirst} onClick={goBack}
+                  icon={<ArrowRight className="dir-icon" size={16} />}>
+            הקודם
+          </Button>
+          {category?.sla_hours && step === 'details' && (
+            <span className="cell-meta">
+              <Lightbulb size={13} style={{ verticalAlign: -2 }} />{' '}
+              יעד טיפול בקטגוריה זו: {category.sla_hours} שעות
+            </span>
+          )}
+          <span className="grow" />
+          <Button type="button" variant="ghost" onClick={() => navigate('/tickets')}>
+            ביטול
+          </Button>
+          {isLast ? (
+            <Button type="submit" variant="primary" loading={busy} icon={<Send size={17} />}>
+              שליחת הקריאה
+            </Button>
+          ) : (
+            <Button type="button" variant="primary" onClick={goNext}
+                    icon={<ArrowLeft className="dir-icon" size={16} />}>
+              המשך
+            </Button>
           )}
         </div>
       </form>
