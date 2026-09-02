@@ -183,7 +183,7 @@
   margin-bottom: var(--space-5);
   flex-wrap: wrap;
 }
-.page-header__text { flex: 1; min-width: 220px; }
+.page-header__text { flex: 1; min-width: 220px; text-align: start; }
 .page-header h1 { font-size: var(--text-2xl); letter-spacing: -0.01em; }
 .page-header__sub { color: var(--text-secondary); font-size: var(--text-base); margin-top: 2px; }
 .page-header__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
@@ -263,7 +263,7 @@
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border);
 }
-.card__title { font-size: var(--text-md); font-weight: 600; }
+.card__title { font-size: var(--text-md); font-weight: 600; text-align: start; }
 .card__header-icon {
   display: grid;
   place-items: center;
@@ -339,7 +339,7 @@
    ========================================================================== */
 
 .field { display: flex; flex-direction: column; gap: var(--space-2); }
-.field__label { font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); }
+.field__label { font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); text-align: start; }
 .field__hint { font-size: var(--text-xs); color: var(--text-muted); }
 .field__error { font-size: var(--text-xs); color: var(--danger-text); font-weight: 500; }
 .field__required { color: var(--danger); margin-inline-start: 2px; }
@@ -559,6 +559,7 @@
   border-bottom: 1px solid var(--border);
   font-size: var(--text-base);
   vertical-align: middle;
+  text-align: start;
 }
 .table tbody tr { transition: background var(--transition); }
 .table tbody tr:hover { background: var(--surface-muted); }
@@ -683,8 +684,8 @@ a.kpi:hover, button.kpi:hover { border-color: var(--border-strong); background: 
 }
 .ticket-page__back:hover { color: var(--primary); }
 .ticket-header__top { display: flex; align-items: flex-start; gap: var(--space-3); flex-wrap: wrap; }
-.ticket-header__title { flex: 1; min-width: 220px; }
-.ticket-header h1 { font-size: var(--text-xl); font-weight: 650; letter-spacing: -0.02em; }
+.ticket-header__title { flex: 1; min-width: 220px; text-align: start; }
+.ticket-header h1 { font-size: var(--text-xl); font-weight: 650; letter-spacing: -0.02em; text-align: start; }
 .ticket-header__meta {
   display: flex; align-items: center; gap: var(--space-3);
   flex-wrap: wrap; margin-top: 4px;

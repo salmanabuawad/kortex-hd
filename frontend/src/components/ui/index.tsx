@@ -18,12 +18,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   icon?: ReactNode;
+  /** Place the icon after the label (the “forward” side in both LTR and RTL). */
+  iconEnd?: boolean;
   loading?: boolean;
   block?: boolean;
 }
 
 export function Button({
-  variant = 'secondary', size = 'md', icon, loading, block, children, className = '',
+  variant = 'secondary', size = 'md', icon, iconEnd, loading, block, children, className = '',
   disabled, ...rest
 }: ButtonProps) {
   const classes = [
@@ -33,10 +35,12 @@ export function Button({
     className,
   ].filter(Boolean).join(' ');
 
+  const mark = loading ? <Loader2 className="spin" aria-hidden /> : icon;
+
   return (
     <button className={classes} disabled={disabled || loading} {...rest}>
-      {loading ? <Loader2 className="spin" aria-hidden /> : icon}
-      {children}
+      {iconEnd ? children : mark}
+      {iconEnd ? mark : children}
     </button>
   );
 }

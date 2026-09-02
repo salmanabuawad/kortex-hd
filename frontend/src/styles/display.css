@@ -241,9 +241,13 @@
   line-height: 1.2;
   color: var(--text);
   letter-spacing: 0.01em;
+  text-align: start;
 }
-.ag-theme-kortex .ag-header-cell-label {
+.ag-theme-kortex .ag-header-cell-label,
+.ag-theme-kortex .ag-header-cell-comp-wrapper {
   overflow: visible;
+  justify-content: flex-start;
+  text-align: start;
 }
 .ag-theme-kortex .ag-row { cursor: pointer; border-bottom-color: var(--border); }
 .ag-theme-kortex .ag-row-hover { background: var(--primary-soft); }
@@ -251,6 +255,8 @@
 .ag-theme-kortex .ag-cell {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  text-align: start;
   line-height: 1.3;
 }
 .ag-theme-kortex .ag-overlay-no-rows-wrapper {
@@ -293,11 +299,8 @@
 [data-contrast="contrast"] .ag-theme-kortex .ag-header-cell-text { color: #000000; }
 [data-contrast="contrast"] .grid-shell { border: 2px solid #000000; }
 
-/* AG Grid ships LTR-first; these keep headers and cells reading correctly
-   when the document direction is RTL. */
-[dir="rtl"] .ag-theme-kortex .ag-header-cell,
-[dir="rtl"] .ag-theme-kortex .ag-cell { text-align: right; }
-[dir="rtl"] .ag-theme-kortex .ag-header-cell-label { flex-direction: row-reverse; }
+/* Direction comes from enableRtl + <html dir>. Logical alignment (flex-start /
+   text-align: start) follows Hebrew and Arabic without a second reverse. */
 
 .grid-toolbar {
   display: flex;

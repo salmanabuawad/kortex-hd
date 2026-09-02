@@ -139,6 +139,8 @@ export function DataGrid<T extends object>({
     filter: true,
     suppressHeaderMenuButton: false,
     minWidth: 80,
+    headerClass: 'ag-header-cell--logical',
+    cellClass: 'ag-cell--logical',
   }), []);
 
   // True once the user has a saved layout: their widths win from then on, and

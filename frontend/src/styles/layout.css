@@ -354,18 +354,20 @@
 }
 .pagehead__icon svg { width: 22px; height: 22px; stroke-width: 1.75; }
 
-.pagehead__text { flex: 1; min-width: 200px; }
+.pagehead__text { flex: 1; min-width: 200px; text-align: start; }
 .pagehead__title {
   font-size: var(--text-xl);
   font-weight: 650;
   letter-spacing: -0.02em;
   line-height: var(--leading-tight);
+  text-align: start;
 }
 .pagehead__summary {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin-top: 2px;
   font-weight: 400;
+  text-align: start;
 }
 .pagehead__spacer { flex: 1; }
 .pagehead__actions {
@@ -397,8 +399,8 @@
   flex-shrink: 0;
 }
 .titlebar__icon svg { width: 22px; height: 22px; stroke-width: 1.75; }
-.titlebar__title { font-size: var(--text-xl); font-weight: 650; letter-spacing: -0.02em; }
-.titlebar__summary { font-size: var(--text-sm); color: var(--text-secondary); }
+.titlebar__title { font-size: var(--text-xl); font-weight: 650; letter-spacing: -0.02em; text-align: start; }
+.titlebar__summary { font-size: var(--text-sm); color: var(--text-secondary); text-align: start; }
 .titlebar__spacer { flex: 1; }
 
 /* --- action bar ----------------------------------------------------------- */

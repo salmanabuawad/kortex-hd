@@ -359,7 +359,7 @@ export default function NewTicket() {
 
         <div className="wizard__nav">
           <Button type="button" variant="ghost" disabled={isFirst} onClick={goBack}
-                  icon={<ArrowRight className="dir-icon" size={16} />}>
+                  icon={<ArrowLeft className="dir-icon" size={16} />}>
             הקודם
           </Button>
           {category?.sla_hours && step === 'details' && (
@@ -373,12 +373,13 @@ export default function NewTicket() {
             ביטול
           </Button>
           {isLast ? (
-            <Button type="submit" variant="primary" loading={busy} icon={<Send size={17} />}>
+            <Button type="submit" variant="primary" loading={busy} iconEnd
+                    icon={<Send size={17} />}>
               שליחת הקריאה
             </Button>
           ) : (
-            <Button type="button" variant="primary" onClick={goNext}
-                    icon={<ArrowLeft className="dir-icon" size={16} />}>
+            <Button type="button" variant="primary" onClick={goNext} iconEnd
+                    icon={<ArrowRight className="dir-icon" size={16} />}>
               המשך
             </Button>
           )}
