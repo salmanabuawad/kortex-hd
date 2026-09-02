@@ -1,6 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import {
-  Archive, Building2, Clock, Database, Layers, LifeBuoy, Network, Pencil, Plus, Printer, ShieldCheck,
+  Archive, Building2, Clock, Database, LayoutGrid, Layers, LifeBuoy, Network, Pencil,
+  Plus, Printer, ShieldCheck, Table2,
 } from 'lucide-react';
 
 import { del, get, patch, post } from '../lib/api';
@@ -13,6 +16,7 @@ import {
   Skeleton, Switch, TextAreaField, TextField,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
+import { DataGrid } from '../components/grid/DataGrid';
 import { useToast } from '../components/ui/toast';
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -23,6 +27,8 @@ const ICONS: Record<string, React.ReactNode> = {
 const ICON_KEYS = Object.keys(ICONS);
 const COLORS = ['blue', 'purple', 'green', 'amber', 'red'];
 const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
+const VIEW_KEY = 'kortex_categories_view';
+type CatalogView = 'tiles' | 'grid';
 
 const blank = {
   name: '', description: '', icon: 'LifeBuoy', color: 'blue',
@@ -32,10 +38,29 @@ const blank = {
   request_type_ids: [] as number[], active: true,
 };
 
+function readView(): CatalogView {
+  try {
+    const stored = localStorage.getItem(VIEW_KEY);
+    if (stored === 'grid' || stored === 'tiles') return stored;
+  } catch { /* private browsing */ }
+  return 'tiles';
+}
+
+function approvalSummary(category: Category): string {
+  const parts = [
+    category.approval_new_service ? 'שירות חדש' : null,
+    category.cost_threshold != null ? `עלות מעל ${formatCurrency(category.cost_threshold)}` : null,
+    category.hours_threshold != null ? `מעל ${formatHours(category.hours_threshold)}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : 'לא נדרש';
+}
+
 export default function Categories() {
+  const { t } = useTranslation();
   const toast = useToast();
   const [editing, setEditing] = useState<Category | null>(null);
   const [creating, setCreating] = useState(false);
+  const [view, setView] = useState<CatalogView>(readView);
 
   const categories = useAsync<{ items: Category[] }>(
     () => get<{ items: Category[] }>('/categories?include_inactive=true'), []);
@@ -44,102 +69,131 @@ export default function Categories() {
   const types = useAsync<{ items: RequestType[] }>(
     () => get<{ items: RequestType[] }>('/request-types'), []);
 
-  const archive = async (category: Category) => {
+  const setCatalogView = (next: CatalogView) => {
+    setView(next);
+    try { localStorage.setItem(VIEW_KEY, next); } catch { /* private browsing */ }
+  };
+
+  const reload = categories.reload;
+  const archive = useCallback(async (category: Category) => {
     try {
       const result = await del<{ archived: boolean; tickets?: number }>(
         `/categories/${category.id}`);
       toast.success(result.archived
         ? `הקטגוריה הועברה לארכיון (${result.tickets} קריאות משויכות)`
         : 'הקטגוריה נמחקה');
-      categories.reload();
+      reload();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'הפעולה נכשלה');
     }
-  };
+  }, [reload, toast]);
+
+  const columns = useMemo<ColDef<Category>[]>(() => [
+    {
+      field: 'name', headerName: 'קטגוריה', flex: 1.4, minWidth: 200,
+      cellRenderer: (p: ICellRendererParams<Category>) => p.data ? (
+        <span className="row" style={{ gap: 'var(--space-2)' }}>
+          <span className={`cat-card__icon cat-card__icon--${p.data.color}`}
+                style={{ width: 28, height: 28 }}>
+            {ICONS[p.data.icon] ?? <LifeBuoy size={16} />}
+          </span>
+          <span>
+            <strong>{p.data.name}</strong>
+            {!p.data.active && (
+              <> {' '}<Chip tone="neutral">בארכיון</Chip></>
+            )}
+          </span>
+        </span>
+      ) : null,
+    },
+    {
+      field: 'resolver', headerName: 'מטפל', minWidth: 140,
+      valueGetter: (p) => p.data?.resolver?.name ?? 'לא הוגדר',
+    },
+    {
+      field: 'escalation', headerName: 'מאשר', minWidth: 140,
+      valueGetter: (p) => p.data?.escalation?.name ?? 'לא הוגדר',
+    },
+    {
+      field: 'sla_hours', headerName: 'זמן תקן', minWidth: 110,
+      valueGetter: (p) => p.data?.sla_hours ? `${p.data.sla_hours} שעות` : 'לא הוגדר',
+    },
+    {
+      colId: 'types', headerName: 'סוגי בקשה', minWidth: 180, sortable: false,
+      valueGetter: (p) => p.data?.request_types.map((type) => type.name).join(', ') ?? '',
+    },
+    {
+      colId: 'actions', headerName: '', minWidth: 220, maxWidth: 280,
+      sortable: false, filter: false,
+      cellRenderer: (p: ICellRendererParams<Category>) => p.data ? (
+        <span className="row ag-ignore-row-click" style={{ gap: 'var(--space-2)' }}>
+          <Button size="sm" icon={<Pencil size={14} />}
+                  onClick={() => setEditing(p.data!)}>עריכה</Button>
+          {p.data.active && (
+            <Button size="sm" variant="ghost" icon={<Archive size={14} />}
+                    onClick={() => void archive(p.data!)}>
+              העברה לארכיון
+            </Button>
+          )}
+        </span>
+      ) : null,
+    },
+  ], [archive]);
+
+  const items = categories.data?.items ?? [];
 
   return (
     <PageFrame
-      reading
+      fill={view === 'grid'}
       icon={<Layers />}
       title="קטגוריות שירות"
-        summary="כל קטגוריה קובעת מי מטפל, מהו זמן התקן, ומתי נדרש אישור"
-        actions={
+      summary="כל קטגוריה קובעת מי מטפל, מהו זמן התקן, ומתי נדרש אישור"
+      actions={
+        <div className="row" style={{ gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          <div className="segmented" role="group" aria-label={t('display.view')}>
+            <button type="button" aria-pressed={view === 'tiles'}
+                    onClick={() => setCatalogView('tiles')}>
+              <LayoutGrid /> {t('display.tiles')}
+            </button>
+            <button type="button" aria-pressed={view === 'grid'}
+                    onClick={() => setCatalogView('grid')}>
+              <Table2 /> {t('display.grid')}
+            </button>
+          </div>
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
             קטגוריה חדשה
           </Button>
-        }
+        </div>
+      }
     >
 
       {categories.error ? (
         <ErrorState message={categories.error} onRetry={categories.reload} />
+      ) : view === 'grid' ? (
+        <DataGrid<Category>
+          gridName="categories"
+          rows={items}
+          columns={columns}
+          loading={categories.loading}
+          getRowId={(row) => String(row.id)}
+          onRowClick={(row) => setEditing(row)}
+          emptyMessage="אין קטגוריות"
+        />
       ) : categories.loading ? (
-        <div className="grid grid--2">
-          {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} height={150} radius={14} />)}
+        <div className="tiles">
+          {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} height={220} radius={14} />)}
         </div>
-      ) : (categories.data?.items.length ?? 0) === 0 ? (
+      ) : items.length === 0 ? (
         <Card><div className="card__body"><EmptyState title="אין קטגוריות" /></div></Card>
       ) : (
-        <div className="grid grid--2">
-          {categories.data?.items.map((category) => (
-            <Card key={category.id} style={{ opacity: category.active ? 1 : 0.62 }}>
-              <div className="cat-card">
-                <span className={`cat-card__icon cat-card__icon--${category.color}`}>
-                  {ICONS[category.icon] ?? <LifeBuoy size={20} />}
-                </span>
-                <div className="grow">
-                  <div className="row row--wrap" style={{ gap: 'var(--space-2)' }}>
-                    <h3 style={{ fontSize: 'var(--text-md)' }}>{category.name}</h3>
-                    {!category.active && <Chip tone="neutral">בארכיון</Chip>}
-                  </div>
-                  {category.description && (
-                    <p className="cell-meta" style={{ marginTop: 2 }}>{category.description}</p>
-                  )}
-
-                  <div className="cat-card__rules">
-                    <span>מטפל: <strong>{category.resolver?.name ?? 'לא הוגדר'}</strong></span>
-                    {category.backup_resolver && (
-                      <span>מחליף: {category.backup_resolver.name}</span>
-                    )}
-                    <span>מאשר: <strong>{category.escalation?.name ?? 'לא הוגדר'}</strong></span>
-                    <span>
-                      <Clock size={12} style={{ verticalAlign: -2 }} />{' '}
-                      זמן תקן: {category.sla_hours ? `${category.sla_hours} שעות` : 'לא הוגדר'}
-                      {' · '}דחיפות ברירת מחדל: {priorityLabel[category.default_priority]}
-                    </span>
-                    <span>
-                      אישור נדרש:{' '}
-                      {[
-                        category.approval_new_service ? 'שירות חדש' : null,
-                        category.cost_threshold != null
-                          ? `עלות מעל ${formatCurrency(category.cost_threshold)}` : null,
-                        category.hours_threshold != null
-                          ? `מעל ${formatHours(category.hours_threshold)}` : null,
-                      ].filter(Boolean).join(' · ') || 'לא נדרש'}
-                    </span>
-                    {category.request_types.length > 0 && (
-                      <span className="row row--wrap" style={{ gap: 4, marginTop: 4 }}>
-                        {category.request_types.map((type) => (
-                          <Chip key={type.id} tone="blue">{type.name}</Chip>
-                        ))}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="row" style={{ gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
-                    <Button size="sm" icon={<Pencil size={14} />}
-                            onClick={() => setEditing(category)}>
-                      עריכה
-                    </Button>
-                    {category.active && (
-                      <Button size="sm" variant="ghost" icon={<Archive size={14} />}
-                              onClick={() => void archive(category)}>
-                        העברה לארכיון
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
+        <div className="tiles">
+          {items.map((category) => (
+            <CategoryTile
+              key={category.id}
+              category={category}
+              onEdit={() => setEditing(category)}
+              onArchive={() => void archive(category)}
+            />
           ))}
         </div>
       )}
@@ -153,6 +207,70 @@ export default function Categories() {
         onSaved={() => { categories.reload(); setCreating(false); setEditing(null); }}
       />
     </PageFrame>
+  );
+}
+
+function CategoryTile({
+  category, onEdit, onArchive,
+}: {
+  category: Category;
+  onEdit: () => void;
+  onArchive: () => void;
+}) {
+  return (
+    <Card style={{ opacity: category.active ? 1 : 0.62 }}>
+      <div className="cat-card">
+        <div className="cat-card__head">
+          <span className={`cat-card__icon cat-card__icon--${category.color}`}>
+            {ICONS[category.icon] ?? <LifeBuoy size={20} />}
+          </span>
+          <div className="grow">
+            <div className="row row--wrap" style={{ gap: 'var(--space-2)' }}>
+              <h3 className="cat-card__name">{category.name}</h3>
+              {!category.active && <Chip tone="neutral">בארכיון</Chip>}
+            </div>
+            {category.description && (
+              <p className="cat-card__desc">{category.description}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="cat-card__rules">
+          <span>מטפל: <strong>{category.resolver?.name ?? 'לא הוגדר'}</strong></span>
+          {category.backup_resolver && (
+            <span>מחליף: <strong>{category.backup_resolver.name}</strong></span>
+          )}
+          <span>מאשר: <strong>{category.escalation?.name ?? 'לא הוגדר'}</strong></span>
+          <span>
+            <Clock size={14} style={{ verticalAlign: -2 }} />{' '}
+            זמן תקן: <strong>
+              {category.sla_hours ? `${category.sla_hours} שעות` : 'לא הוגדר'}
+            </strong>
+            {' · '}דחיפות ברירת מחדל: {priorityLabel[category.default_priority]}
+          </span>
+          <span>אישור נדרש: <strong>{approvalSummary(category)}</strong></span>
+        </div>
+
+        <div className="cat-card__foot">
+          <div className="cat-card__types">
+            {category.request_types.map((type) => (
+              <span key={type.id} className="cat-card__type">{type.name}</span>
+            ))}
+          </div>
+          <div className="cat-card__admin">
+            <Button size="sm" icon={<Pencil size={14} />} onClick={onEdit}>
+              עריכה
+            </Button>
+            {category.active && (
+              <Button size="sm" variant="ghost" icon={<Archive size={14} />}
+                      onClick={onArchive}>
+                העברה לארכיון
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 

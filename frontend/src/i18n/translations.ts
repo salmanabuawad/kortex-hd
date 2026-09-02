@@ -57,6 +57,9 @@ export const he = {
     dark: 'כהה',
     highContrast: 'ניגודיות גבוהה',
     settingsMenu: 'הגדרות תצוגה',
+    view: 'אופן תצוגה',
+    tiles: 'כרטיסים',
+    grid: 'טבלה',
   },
   actions: {
     newTicket: 'קריאה חדשה',
@@ -234,6 +237,9 @@ export const en = {
     dark: 'Dark',
     highContrast: 'High contrast',
     settingsMenu: 'Display settings',
+    view: 'View',
+    tiles: 'Tiles',
+    grid: 'Table',
   },
   actions: {
     newTicket: 'New ticket',
@@ -411,6 +417,9 @@ export const ar = {
     dark: 'داكن',
     highContrast: 'تباين عالٍ',
     settingsMenu: 'إعدادات العرض',
+    view: 'طريقة العرض',
+    tiles: 'بطاقات',
+    grid: 'جدول',
   },
   actions: {
     newTicket: 'طلب جديد',
