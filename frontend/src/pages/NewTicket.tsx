@@ -52,6 +52,9 @@ export default function NewTicket() {
   const [hours, setHours] = useState('');
   const [media, setMedia] = useState<PendingMedia[]>([]);
   const [error, setError] = useState('');
+  /** Which details field a validation message belongs to, so it can be shown
+   *  on the field itself and not only in the banner at the top of the pane. */
+  const [errorField, setErrorField] = useState<'subject' | 'description' | null>(null);
   const [busy, setBusy] = useState(false);
   /** Set while attachments upload, after the ticket itself already exists. */
   const [uploading, setUploading] = useState('');
@@ -105,6 +108,7 @@ export default function NewTicket() {
 
   const goTo = (id: StepId) => {
     setError('');
+    setErrorField(null);
     setStep(id);
   };
 
@@ -117,8 +121,12 @@ export default function NewTicket() {
     // a step of its own, an empty subject would otherwise surface a step later,
     // away from the field it belongs to.
     if (step === 'details') {
-      if (subject.trim().length < 3) { setError('יש להזין נושא לקריאה'); return; }
-      if (!description.trim()) { setError('יש לתאר את הבקשה'); return; }
+      if (subject.trim().length < 3) {
+        setError('יש להזין נושא לקריאה'); setErrorField('subject'); return;
+      }
+      if (!description.trim()) {
+        setError('יש לתאר את הבקשה'); setErrorField('description'); return;
+      }
     }
     const next = steps[stepIndex + 1];
     if (next) goTo(next);
@@ -157,8 +165,12 @@ export default function NewTicket() {
       return;
     }
     if (!categoryId) { setError('יש לבחור קטגוריה'); goTo('category'); return; }
-    if (subject.trim().length < 3) { setError('יש להזין נושא לקריאה'); goTo('details'); return; }
-    if (!description.trim()) { setError('יש לתאר את הבקשה'); goTo('details'); return; }
+    if (subject.trim().length < 3) {
+      goTo('details'); setError('יש להזין נושא לקריאה'); setErrorField('subject'); return;
+    }
+    if (!description.trim()) {
+      goTo('details'); setError('יש לתאר את הבקשה'); setErrorField('description'); return;
+    }
 
     setError('');
     setBusy(true);
@@ -211,12 +223,17 @@ export default function NewTicket() {
     media: t('media.step'),
   };
 
+  // The path is not a fixed length -- a category with no request types drops the
+  // second step -- so the heading says where we are instead of promising a
+  // count it cannot keep.
+  const progressLabel = `שלב ${stepIndex + 1} מתוך ${steps.length} · ${stepLabel[step]}`;
+
   return (
     <PageFrame
       fill
       icon={<TicketPlus />}
       title="פתיחת קריאה חדשה"
-      summary="שלושה צעדים קצרים — קטגוריה, סוג, ופרטים"
+      summary={progressLabel}
       actions={
         <Button variant="ghost" icon={<ArrowLeft className="dir-icon" size={16} />} onClick={() => navigate(-1)}>
           חזרה
@@ -245,7 +262,7 @@ export default function NewTicket() {
           })}
         </ol>
 
-        {error && <Banner tone="danger">{error}</Banner>}
+        {error && !errorField && <Banner tone="danger">{error}</Banner>}
 
         <div className="wizard__pane">
           {step === 'category' && (
@@ -337,13 +354,15 @@ export default function NewTicket() {
                   <TextField
                     label="נושא" required maxLength={220}
                     value={subject}
-                    onChange={(event) => setSubject(event.target.value)}
+                    error={errorField === 'subject' ? error : undefined}
+                    onChange={(event) => { setSubject(event.target.value); if (errorField === 'subject') { setError(''); setErrorField(null); } }}
                     placeholder="למשל: אין חיבור לאינטרנט במשרד קומה 2"
                   />
                   <TextAreaField
                     label="תיאור מפורט" required
                     value={description}
-                    onChange={(event) => setDescription(event.target.value)}
+                    error={errorField === 'description' ? error : undefined}
+                    onChange={(event) => { setDescription(event.target.value); if (errorField === 'description') { setError(''); setErrorField(null); } }}
                     placeholder="מה קרה, ממתי, ומה כבר ניסיתם? ככל שיהיו יותר פרטים, הטיפול יהיה מהיר יותר."
                     hint="ציינו מיקום, שעה ומספר עמדה אם רלוונטי"
                   />

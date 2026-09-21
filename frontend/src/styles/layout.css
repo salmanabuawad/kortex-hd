@@ -323,8 +323,19 @@
   padding: var(--space-5) var(--space-4);
 }
 
+/* A page that manages its own scrolling -- a grid, a wizard -- gets exactly the
+   viewport and nothing more.
+
+   `flex: 0 0 auto` is the point of this rule. The base .workarea__body is
+   `flex: 1`, and a flex-basis of 0 wins over `height`, so the frame stretched
+   to its content instead of to the screen: .workarea is min-height:100vh and
+   grows, the page grew with it, and an action bar that the markup pins below a
+   scrolling pane ended up below the fold. Fixing the basis makes the height
+   authoritative again, so the pane inside scrolls and the bar stays put. */
 .workarea__body--fill {
+  flex: 0 0 auto;
   height: calc(100vh - var(--appbar-height) - var(--appfooter-height));
+  min-height: 0;
   overflow: hidden;
   gap: var(--space-3);
   padding: var(--space-4);
