@@ -116,11 +116,15 @@ export default function Health() {
                              style={{ borderBottom: '1px solid var(--border)' }}>
                           <Chip
                             tone={delivery.status === 'sent' ? 'green'
-                              : delivery.status === 'failed' ? 'red' : 'neutral'}
+                              : delivery.status === 'failed' ? 'red'
+                                : delivery.status === 'logged' ? 'amber' : 'neutral'}
                             dot
                           >
                             {delivery.status === 'sent' ? 'נשלח'
-                              : delivery.status === 'failed' ? 'נכשל' : 'דולג'}
+                              : delivery.status === 'failed' ? 'נכשל'
+                                /* Recorded, not delivered: no provider is configured
+                                   yet, so saying "נשלח" here would be a lie. */
+                                : delivery.status === 'logged' ? 'נרשם ביומן' : 'דולג'}
                           </Chip>
                           <div className="grow" style={{ minWidth: 0 }}>
                             <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>

@@ -100,7 +100,11 @@ def emit(
         delivery.provider = result.provider
         delivery.attempts = 1
         if result.ok:
-            delivery.status = "sent"
+            # "sent" must mean a provider actually transmitted it. The log
+            # provider hands back ok so the flow continues, but recording that
+            # as sent would have the deliveries screen claim mail went out when
+            # nothing left the machine.
+            delivery.status = "logged" if result.provider.startswith("log") else "sent"
             delivery.sent_at = datetime.now(timezone.utc)
         else:
             delivery.status = "failed"
