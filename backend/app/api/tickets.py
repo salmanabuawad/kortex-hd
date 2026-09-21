@@ -138,7 +138,7 @@ def create_ticket(
         status=TicketStatus.ASSIGNED if category.resolver_id else TicketStatus.NEW,
         estimated_cost=data.estimated_cost,
         estimated_hours=data.estimated_hours,
-        sla_due_at=sla.due_at(category, now),
+        sla_due_at=sla.due_at(db, category, now, priority),
     )
     db.add(ticket)
     db.flush()
@@ -305,6 +305,11 @@ def update_ticket(
     for field, value in changes.items():
         setattr(ticket, field, value)
 
+    # The target follows the urgency: raising a ticket to urgent has to move its
+    # deadline, or changing the priority means nothing.
+    if "priority" in changes:
+        ticket.sla_due_at = sla.due_at(db, ticket.category, ticket.created_at, ticket.priority)
+
     if ticket.status in (TicketStatus.ASSIGNED, TicketStatus.VIEWED, TicketStatus.NEW):
         ticket.status = TicketStatus.IN_PROGRESS
 
@@ -371,8 +376,8 @@ def transfer(
         if not new_category or not new_category.active:
             raise HTTPException(400, "קטגוריה לא חוקית")
         ticket.category_id = new_category.id
-        # Re-base the SLA clock on the receiving category's target.
-        ticket.sla_due_at = sla.due_at(new_category, ticket.created_at)
+        # Re-base the SLA clock on the receiving category.
+        ticket.sla_due_at = sla.due_at(db, new_category, ticket.created_at, ticket.priority)
 
     ticket.resolver_id = new_resolver.id
     # Back to ASSIGNED so the receiving resolver produces their own view event.

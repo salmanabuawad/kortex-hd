@@ -508,3 +508,35 @@ def test_media_uploads_and_inline_disposition(client, world):
         files={"file": ("note.txt", b"hello", "text/plain")}).json()
     forced = client.get(f"/api/attachments/ticket/{doc['id']}?inline=true", headers=requester)
     assert "attachment" in forced.headers["content-disposition"]
+
+
+def test_sla_target_follows_priority(client, world):
+    """Two hours, one day, three days, one week -- and re-prioritising an open
+    ticket moves its deadline rather than leaving the old one in place."""
+    from datetime import datetime
+
+    staff = auth(client, world, "resolver")
+    expected = {"urgent": 2, "high": 24, "normal": 72, "low": 168}
+
+    def hours_between(created: str, due: str) -> float:
+        a = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        b = datetime.fromisoformat(due.replace("Z", "+00:00"))
+        return (b - a).total_seconds() / 3600
+
+    ids = {}
+    for priority, hours in expected.items():
+        body = client.post("/api/tickets", headers=staff, json={
+            "subject": f"דחיפות {priority}", "description": "בדיקת זמן תקן",
+            "category_id": world["category"], "request_type_id": world["fault"],
+            "priority": priority}).json()
+        assert body["sla_due_at"], f"{priority} got no target"
+        got = hours_between(body["created_at"], body["sla_due_at"])
+        assert abs(got - hours) < 0.1, f"{priority}: expected {hours}h, got {got:.2f}h"
+        ids[priority] = body["id"]
+
+    # Raising a low-priority ticket to urgent pulls the deadline in to two hours.
+    raised = client.patch(f"/api/tickets/{ids['low']}", headers=staff,
+                          json={"priority": "urgent"})
+    assert raised.status_code == 200
+    after = client.get(f"/api/tickets/{ids['low']}", headers=staff).json()
+    assert abs(hours_between(after["created_at"], after["sla_due_at"]) - 2) < 0.1

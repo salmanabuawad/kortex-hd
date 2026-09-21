@@ -1,17 +1,65 @@
-"""SLA computation. Targets come from the category; state is derived, never stored,
-so changing a target does not require rewriting history."""
+"""SLA computation.
+
+How long a ticket may take is decided by how urgent it is, which is the thing a
+requester and a resolver both already reason about. State is derived, never
+stored, so changing a target does not rewrite history -- an open ticket moves to
+the new target, a closed one keeps the verdict it earned.
+"""
 from datetime import datetime, timedelta, timezone
 
-from ..constants import SlaState, TicketStatus
-from ..models import Category, Ticket
+from sqlalchemy.orm import Session
+
+from ..constants import Priority, SlaState, TicketStatus
+from ..models import Category, Setting, Ticket
 
 AT_RISK_FRACTION = 0.75
 
+SETTING_KEYS = {
+    Priority.URGENT: "sla.hours_urgent",
+    Priority.HIGH: "sla.hours_high",
+    Priority.NORMAL: "sla.hours_normal",
+    Priority.LOW: "sla.hours_low",
+}
 
-def due_at(category: Category, start: datetime) -> datetime | None:
-    if not category.sla_hours:
+# Two hours, one day, three days, one week.
+DEFAULT_PRIORITY_HOURS = {
+    Priority.URGENT: 2,
+    Priority.HIGH: 24,
+    Priority.NORMAL: 72,
+    Priority.LOW: 168,
+}
+
+
+def hours_for(db: Session, priority: str, category: Category | None = None) -> int | None:
+    """The target for one ticket, in hours.
+
+    Priority decides it. A category's own sla_hours is the fallback for a
+    priority with no configured target, so an existing per-category commitment
+    is not lost, but it no longer overrides urgency.
+    """
+    key = SETTING_KEYS.get(priority)
+    if key:
+        row = db.get(Setting, key)
+        if row and (row.value or "").strip():
+            try:
+                hours = int(float(row.value))
+                if hours > 0:
+                    return hours
+            except ValueError:
+                pass                       # a bad value falls through, never crashes intake
+        default = DEFAULT_PRIORITY_HOURS.get(priority)
+        if default:
+            return default
+    return category.sla_hours if category and category.sla_hours else None
+
+
+def due_at(
+    db: Session, category: Category | None, start: datetime, priority: str,
+) -> datetime | None:
+    hours = hours_for(db, priority, category)
+    if not hours:
         return None
-    return start + timedelta(hours=category.sla_hours)
+    return start + timedelta(hours=hours)
 
 
 def state_for(ticket: Ticket, now: datetime | None = None) -> str:

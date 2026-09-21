@@ -118,6 +118,12 @@ DEFAULT_SETTINGS = [
     ("council.support_email", "support@buqata.muni.il", "general"),
     ("sla.default_hours", "24", "sla"),
     ("sla.warning_fraction", "0.75", "sla"),
+    # How long a ticket may take, by how urgent it is: two hours, one day,
+    # three days, one week.
+    ("sla.hours_urgent", "2", "sla"),
+    ("sla.hours_high", "24", "sla"),
+    ("sla.hours_normal", "72", "sla"),
+    ("sla.hours_low", "168", "sla"),
     ("notifications.email_enabled", "true", "notifications"),
     ("notifications.sms_enabled", "false", "notifications"),
     ("notifications.whatsapp_enabled", "false", "notifications"),
