@@ -243,7 +243,7 @@ function CategoryTile({
           <span>מאשר: <strong>{category.escalation?.name ?? 'לא הוגדר'}</strong></span>
           <span>
             <Clock size={14} style={{ verticalAlign: -2 }} />{' '}
-            זמן תקן: <strong>
+            זמן תקן חלופי: <strong>
               {category.sla_hours ? `${category.sla_hours} שעות` : 'לא הוגדר'}
             </strong>
             {' · '}דחיפות ברירת מחדל: {priorityLabel[category.default_priority]}
@@ -433,9 +433,9 @@ function CategoryDrawer({
         <h4 style={{ marginTop: 'var(--space-2)' }}>זמן תקן ודחיפות</h4>
         <div className="grid grid--2">
           <TextField
-            label="זמן תקן (שעות)" type="number" min={1} value={form.sla_hours}
+            label="זמן תקן חלופי (שעות)" type="number" min={1} value={form.sla_hours}
             onChange={(event) => update('sla_hours', event.target.value)}
-            hint="ריק = ללא יעד"
+            hint="זמן התקן נקבע לפי הדחיפות בהגדרות. ערך כאן משמש רק לדחיפות שלא הוגדר לה יעד."
           />
           <SelectField
             label="דחיפות ברירת מחדל" value={form.default_priority}

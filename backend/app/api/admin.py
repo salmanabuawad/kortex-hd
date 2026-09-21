@@ -11,7 +11,7 @@ from ..models import (
     User, WorkflowRule,
 )
 from ..security import hash_password, password_problem
-from ..services import audit, mail_settings
+from ..services import audit, mail_settings, sla
 from .deps import current_user, require_admin, require_staff
 from . import serializers as S
 
@@ -32,6 +32,20 @@ def list_categories(
     rows = query.order_by(Category.sort_order, Category.name).all()
     admin_view = user.role == Role.ADMIN
     return {"items": [S.category(c, admin=admin_view) for c in rows]}
+
+
+@router.get("/sla-targets")
+def sla_targets(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    """How long a ticket may take, by priority.
+
+    Open to any signed-in user, not just administrators: the new-ticket form
+    tells a requester what response time their choice of priority commits the
+    desk to, and it cannot say that from the category alone any more.
+    """
+    return {"hours": {p: sla.hours_for(db, p) for p in Priority.ALL}}
 
 
 def _apply_category(db: Session, category: Category, data: schemas.CategoryIn) -> None:

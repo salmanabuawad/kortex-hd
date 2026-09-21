@@ -72,6 +72,30 @@ export function formatHours(value: number | null | undefined): string {
     suffix === 'duration.hoursShort' ? 'שע׳' : suffix}`;
 }
 
+/** A response target as a person would say it: שעתיים, יום, 3 ימים, שבוע.
+ *  "168 שעות" is technically correct and useless for judging urgency. */
+export function formatDuration(hours: number | null | undefined): string {
+  if (!hours || hours <= 0) return '';
+  if (hours < 24) {
+    if (hours === 1) return 'שעה';
+    if (hours === 2) return 'שעתיים';
+    return `${hours} שעות`;
+  }
+  if (hours % 168 === 0) {
+    const weeks = hours / 168;
+    if (weeks === 1) return 'שבוע';
+    if (weeks === 2) return 'שבועיים';
+    return `${weeks} שבועות`;
+  }
+  if (hours % 24 === 0) {
+    const days = hours / 24;
+    if (days === 1) return 'יום';
+    if (days === 2) return 'יומיים';
+    return `${days} ימים`;
+  }
+  return `${hours} שעות`;
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;

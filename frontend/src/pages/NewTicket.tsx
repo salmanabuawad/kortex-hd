@@ -8,7 +8,7 @@ import {
 
 import { get, post, upload } from '../lib/api';
 import { useAsync } from '../lib/hooks';
-import { formatCurrency, formatHours } from '../lib/format';
+import { formatCurrency, formatDuration, formatHours } from '../lib/format';
 import { priorityLabel } from '../lib/labels';
 import type { Category, KnownIssue, Priority, RequestType, Ticket } from '../lib/types';
 import {
@@ -75,6 +75,12 @@ export default function NewTicket() {
       : Promise.resolve({ items: [] })),
     [categoryId],
   );
+
+  // The response target follows the chosen priority, not the category, so the
+  // form has to read the configured targets rather than category.sla_hours.
+  const slaTargets = useAsync<{ hours: Record<string, number | null> }>(
+    () => get<{ hours: Record<string, number | null> }>('/sla-targets'), []);
+  const slaLabel = formatDuration(slaTargets.data?.hours?.[priority]);
 
   const isNewService = requestType?.key === 'new_service';
   const hasTypes = (category?.request_types.length ?? 0) > 0;
@@ -454,10 +460,10 @@ export default function NewTicket() {
                   icon={<ArrowLeft className="dir-icon" size={16} />}>
             הקודם
           </Button>
-          {category?.sla_hours && step === 'details' && (
+          {slaLabel && step === 'details' && (
             <span className="cell-meta">
               <Lightbulb size={13} style={{ verticalAlign: -2 }} />{' '}
-              יעד טיפול בקטגוריה זו: {category.sla_hours} שעות
+              יעד טיפול בדחיפות {priorityLabel[priority]}: {slaLabel}
             </span>
           )}
           {uploading && <span className="cell-meta" role="status">{uploading}</span>}
