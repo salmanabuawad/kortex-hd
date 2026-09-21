@@ -206,7 +206,9 @@ def create_user(
 ):
     if data.role not in Role.ALL:
         raise HTTPException(400, "תפקיד לא חוקי")
-    email = str(data.email).lower()
+    # Normalised the same way sign-in and the update path normalise it, so
+    # "A@x" and " a@x " cannot become two accounts that both look like one.
+    email = str(data.email).strip().lower()
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(409, "משתמש עם כתובת זו כבר קיים")
     problem = password_problem(data.password)

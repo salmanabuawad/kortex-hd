@@ -605,3 +605,32 @@ def test_identity_is_the_user_id_not_the_email(client, world):
     still_there = client.get(f"/api/tickets/{ticket['id']}", headers=headers)
     assert still_there.status_code == 200
     assert still_there.json()["requester"]["id"] == user_id
+
+
+def test_email_is_unique_including_case(client, world):
+    """One address, one account. Case and surrounding space must not be able to
+    produce a second account that looks identical to a human."""
+    admin = auth(client, world, "admin")
+    base = {"full_name": "ייחודיות", "role": "requester",
+            "password": "TempPass12345", "active": True}
+
+    first = client.post("/api/users", headers=admin,
+                        json={**base, "email": "unique.person@qa.buqata.muni.il"})
+    assert first.status_code == 201, first.text
+
+    # Same address again.
+    again = client.post("/api/users", headers=admin,
+                        json={**base, "email": "unique.person@qa.buqata.muni.il"})
+    assert again.status_code == 409
+
+    # Same address in different case, which the database alone would allow.
+    cased = client.post("/api/users", headers=admin,
+                        json={**base, "email": "Unique.Person@QA.buqata.muni.il"})
+    assert cased.status_code == 409, "case variation created a second account"
+
+    # And the update path cannot sneak a duplicate in either.
+    other = client.post("/api/users", headers=admin,
+                        json={**base, "email": "someone.else@qa.buqata.muni.il"}).json()
+    collide = client.patch(f"/api/users/{other['id']}", headers=admin,
+                           json={"email": "UNIQUE.PERSON@qa.buqata.muni.il"})
+    assert collide.status_code == 400, "case variation bypassed the collision check"
