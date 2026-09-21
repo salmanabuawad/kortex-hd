@@ -261,7 +261,8 @@ function UserDialog({
 
     const body = person
       ? {
-        full_name: fullName.trim(), phone: phone.trim() || null,
+        full_name: fullName.trim(), email: email.trim().toLowerCase(),
+        phone: phone.trim() || null,
         title: title.trim() || null, role,
         department_id: departmentId ? Number(departmentId) : null,
       }
@@ -301,8 +302,10 @@ function UserDialog({
         />
         <TextField
           label="כתובת דוא״ל" type="email" required dir="ltr" className="input ltr"
-          value={email} disabled={person !== null}
-          hint={person ? 'לא ניתן לשנות כתובת דוא״ל של משתמש קיים' : 'משמשת גם כשם המשתמש בכניסה'}
+          value={email}
+          hint={person
+            ? 'משמשת גם כשם המשתמש בכניסה — שינוי משנה גם את אופן ההתחברות'
+            : 'משמשת גם כשם המשתמש בכניסה'}
           onChange={(event) => setEmail(event.target.value)}
         />
         <div className="grid grid--2">

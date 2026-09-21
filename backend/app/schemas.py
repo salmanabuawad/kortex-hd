@@ -126,6 +126,10 @@ class UserIn(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: str | None = None
+    #: Also the login, so changing it changes how the person signs in. Editable
+    #: because the staff import generated addresses for employees who had none
+    #: on file, and those have to be replaced with real mailboxes.
+    email: EmailStr | None = None
     phone: str | None = None
     role: str | None = None
     department_id: int | None = None

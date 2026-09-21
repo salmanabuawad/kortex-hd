@@ -540,3 +540,32 @@ def test_sla_target_follows_priority(client, world):
     assert raised.status_code == 200
     after = client.get(f"/api/tickets/{ids['low']}", headers=staff).json()
     assert abs(hours_between(after["created_at"], after["sla_due_at"]) - 2) < 0.1
+
+
+def test_admin_can_change_a_user_email(client, world):
+    """The staff import generated addresses for employees with none on file, so
+    correcting one has to be possible -- and must not collide with another."""
+    admin = auth(client, world, "admin")
+    created = client.post("/api/users", headers=admin, json={
+        "full_name": "עובד בדיקה", "email": "generated.name@qa.buqata.muni.il",
+        "role": "requester", "password": "TempPass12345", "active": True})
+    assert created.status_code == 201, created.text
+    user_id = created.json()["id"]
+
+    fixed = client.patch(f"/api/users/{user_id}", headers=admin,
+                         json={"email": "Real.Mailbox@QA.buqata.muni.il"})
+    assert fixed.status_code == 200, fixed.text
+    assert fixed.json()["email"] == "real.mailbox@qa.buqata.muni.il"   # normalised
+
+    # The new address is the login from now on.
+    security._hits.clear()
+    assert client.post("/api/auth/login", json={
+        "email": "real.mailbox@qa.buqata.muni.il", "password": "TempPass12345"}).status_code == 200
+    security._hits.clear()
+    assert client.post("/api/auth/login", json={
+        "email": "generated.name@qa.buqata.muni.il", "password": "TempPass12345"}).status_code == 401
+
+    # Two people cannot share one login.
+    clash = client.patch(f"/api/users/{user_id}", headers=admin,
+                         json={"email": "requester@qa.buqata.muni.il"})
+    assert clash.status_code == 400

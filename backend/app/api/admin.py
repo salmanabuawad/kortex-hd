@@ -237,6 +237,22 @@ def update_user(
     changes = data.model_dump(exclude_none=True)
     if "role" in changes and changes["role"] not in Role.ALL:
         raise HTTPException(400, "תפקיד לא חוקי")
+
+    # The address is the login, so it is normalised the same way sign-in
+    # normalises it, and it has to stay unique or two people could not both log
+    # in. The previous address is kept in the audit trail: after a bulk import
+    # that invented addresses, "what was this account before?" is a question
+    # somebody will ask.
+    previous_email = None
+    if "email" in changes:
+        new_email = str(changes["email"]).strip().lower()
+        if new_email != row.email:
+            clash = db.query(User).filter(
+                User.email == new_email, User.id != row.id).first()
+            if clash:
+                raise HTTPException(400, f"הכתובת {new_email} כבר משויכת למשתמש אחר")
+            previous_email = row.email
+        changes["email"] = new_email
     # Refuse to strip the last admin, which would lock everyone out.
     if row.id == user.id and (changes.get("role", row.role) != Role.ADMIN
                               or changes.get("active", row.active) is False):
@@ -246,8 +262,10 @@ def update_user(
             raise HTTPException(400, "לא ניתן להסיר את מנהל המערכת האחרון")
     for field, value in changes.items():
         setattr(row, field, value)
-    audit.record(db, action="user_updated", actor=user,
-                 details={"email": row.email, "changes": list(changes)})
+    details = {"email": row.email, "changes": list(changes)}
+    if previous_email:
+        details["previous_email"] = previous_email
+    audit.record(db, action="user_updated", actor=user, details=details)
     db.commit()
     db.refresh(row)
     return S.user_full(row)
