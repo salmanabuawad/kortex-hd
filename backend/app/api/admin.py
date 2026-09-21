@@ -370,7 +370,7 @@ def get_settings(
     for row in rows:
         # The mailbox password never leaves the server. The screen needs to know
         # only whether one is stored, so it can say so and leave it alone.
-        value = mail_settings.MASK if row.key == mail_settings.PASSWORD_KEY else row.value
+        value = mail_settings.MASK if row.key in mail_settings.SECRET_KEYS else row.value
         grouped.setdefault(row.group, {})[row.key] = value
 
     cfg = mail_settings.resolve(db)
@@ -385,6 +385,12 @@ def get_settings(
         "mail.support_inbox": cfg.support_inbox,
         "mail.password": mail_settings.MASK if mail_settings.has_password(db) else "",
         "mail.password_set": "true" if mail_settings.has_password(db) else "false",
+        "mail.graph_tenant_id": cfg.graph_tenant_id,
+        "mail.graph_client_id": cfg.graph_client_id,
+        "mail.graph_client_secret":
+            mail_settings.MASK if mail_settings.has_graph_secret(db) else "",
+        "mail.graph_client_secret_set":
+            "true" if mail_settings.has_graph_secret(db) else "false",
     })
     return {"groups": grouped}
 
@@ -427,17 +433,18 @@ def send_test_mail(
     Configuration that has never delivered anything is a guess, so the screen
     that edits it can prove it works before the council relies on it.
     """
-    from ..services.notifications.providers import SmtpEmailProvider
+    from ..services.notifications.providers import provider_for
 
     cfg = mail_settings.resolve(db)
     recipient = (data.to or cfg.support_inbox or "").strip()
     if not recipient:
         raise HTTPException(400, "יש להזין כתובת לשליחת הבדיקה")
-    if cfg.provider != "smtp":
+    if cfg.provider == "log":
         raise HTTPException(
-            400, "ספק הדואר מוגדר כ״יומן״ — יש לבחור SMTP ולשמור לפני בדיקה")
+            400, "ספק הדואר מוגדר כ״יומן״ — יש לבחור SMTP או Microsoft Graph "
+                 "ולשמור לפני בדיקה")
 
-    result = SmtpEmailProvider(cfg).send(
+    result = provider_for("email", db).send(
         recipient,
         "בדיקת הגדרות דואר — מוקד שירות",
         "הודעת בדיקה ממוקד השירות.\n"

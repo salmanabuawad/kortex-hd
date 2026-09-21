@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import logging
 import smtplib
+import time
 from abc import ABC, abstractmethod
+
+import httpx
 from email.header import Header
 from email.message import EmailMessage
 from email.utils import formataddr
@@ -111,11 +114,118 @@ class SmtpEmailProvider(Provider):
         return True, f"{cfg.host}:{cfg.port} ({mode}) כ־{cfg.from_address}"
 
 
+class GraphEmailProvider(Provider):
+    """Sends through Microsoft Graph as a registered application.
+
+    This exists because Microsoft disables SMTP AUTH tenant-wide by default, so
+    a perfectly valid mailbox password is refused before it is even checked.
+    Graph authenticates the application instead, using client credentials and
+    the Mail.Send application permission, and is what Microsoft actually
+    recommends for unattended sending.
+
+    The sending mailbox is the From address: Mail.Send as an application can
+    send as any mailbox in the tenant, so that permission should be narrowed to
+    the service desk mailbox with an application access policy.
+    """
+    name = "graph"
+
+    TOKEN_URL = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+    SEND_URL = "https://graph.microsoft.com/v1.0/users/{sender}/sendMail"
+
+    #: (tenant, client_id) -> (access_token, expires_at). A token lasts an hour;
+    #: fetching one per notification would triple the work of sending.
+    _tokens: dict[tuple[str, str], tuple[str, float]] = {}
+
+    def __init__(self, cfg):
+        self.cfg = cfg
+
+    def _token(self) -> str:
+        cfg = self.cfg
+        key = (cfg.graph_tenant_id, cfg.graph_client_id)
+        cached = self._tokens.get(key)
+        if cached and cached[1] > time.time() + 60:
+            return cached[0]
+
+        response = httpx.post(
+            self.TOKEN_URL.format(tenant=cfg.graph_tenant_id),
+            data={
+                "client_id": cfg.graph_client_id,
+                "client_secret": cfg.graph_client_secret,
+                "scope": "https://graph.microsoft.com/.default",
+                "grant_type": "client_credentials",
+            },
+            timeout=20,
+        )
+        if response.status_code != 200:
+            raise RuntimeError(_graph_error(response))
+        payload = response.json()
+        token = payload["access_token"]
+        self._tokens[key] = (token, time.time() + int(payload.get("expires_in", 3600)))
+        return token
+
+    def send(self, recipient: str, subject: str, body: str) -> SendResult:
+        cfg = self.cfg
+        if not cfg.graph_ready:
+            return SendResult(False, self.name, "חסרים פרטי חיבור ל-Microsoft Graph")
+        try:
+            message = {
+                "subject": subject,
+                "body": {"contentType": "Text", "content": body},
+                "toRecipients": [{"emailAddress": {"address": recipient}}],
+            }
+            if cfg.support_inbox and cfg.support_inbox != cfg.from_address:
+                message["replyTo"] = [{"emailAddress": {"address": cfg.support_inbox}}]
+
+            response = httpx.post(
+                self.SEND_URL.format(sender=cfg.from_address),
+                headers={"Authorization": f"Bearer {self._token()}"},
+                json={"message": message, "saveToSentItems": True},
+                timeout=30,
+            )
+            # sendMail answers 202 with an empty body on success.
+            if response.status_code not in (200, 202):
+                return SendResult(False, self.name, _graph_error(response))
+            return SendResult(True, self.name)
+        except Exception as exc:                      # noqa: BLE001 - reported, not raised
+            return SendResult(False, self.name, str(exc))
+
+    def healthy(self) -> tuple[bool, str]:
+        cfg = self.cfg
+        missing = [label for label, value in (
+            ("מזהה דייר", cfg.graph_tenant_id),
+            ("מזהה יישום", cfg.graph_client_id),
+            ("סוד יישום", cfg.graph_client_secret),
+            ("כתובת השולח", cfg.from_address),
+        ) if not value]
+        if missing:
+            return False, "חסר: " + ", ".join(missing)
+        return True, f"Microsoft Graph כ־{cfg.from_address}"
+
+
+def _graph_error(response) -> str:
+    """Microsoft's own wording, which is what makes a misconfiguration
+    diagnosable -- a missing admin consent and a wrong secret look identical
+    otherwise."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return f"HTTP {response.status_code}: {response.text[:200]}"
+    detail = (payload.get("error_description")
+              or (payload.get("error") or {}).get("message")
+              or payload.get("error")
+              or response.text[:200])
+    if isinstance(detail, dict):
+        detail = detail.get("message", str(detail))
+    return f"HTTP {response.status_code}: {str(detail)[:300]}"
+
+
 def provider_for(channel: str, db=None) -> Provider:
     """Resolved per call, because mail configuration now lives in the database
     and an administrator can change it without a restart."""
     if channel == Channel.EMAIL:
         cfg = mail_settings.resolve(db)
+        if cfg.provider == "graph":
+            return GraphEmailProvider(cfg)
         if cfg.provider == "smtp":
             return SmtpEmailProvider(cfg)
         if cfg.provider != "log":

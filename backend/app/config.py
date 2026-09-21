@@ -115,6 +115,14 @@ SMTP_SSL = os.getenv("SMTP_SSL", "auto").lower()
 # the desk, not a noreply void.
 SUPPORT_INBOX = os.getenv("SUPPORT_INBOX", "support@buqata.muni.il")
 
+# Microsoft Graph, as an alternative to SMTP. A tenant that has disabled SMTP
+# AUTH -- Microsoft's default for years now -- can still send this way, because
+# it authenticates as a registered application rather than as a mailbox.
+# Defaults live here; the values an administrator enters in the UI take over.
+GRAPH_TENANT_ID = os.getenv("GRAPH_TENANT_ID", "")
+GRAPH_CLIENT_ID = os.getenv("GRAPH_CLIENT_ID", "")
+GRAPH_CLIENT_SECRET = os.getenv("GRAPH_CLIENT_SECRET", "")
+
 if not DATABASE_URL.startswith("postgresql"):
     raise RuntimeError(
         f"DATABASE_URL must be a postgresql:// URL, got {DATABASE_URL.split('://')[0]!r}"

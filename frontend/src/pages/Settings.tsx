@@ -284,6 +284,7 @@ function MailSettings({
 
   const provider = values['mail.provider'] ?? 'log';
   const passwordSet = values['mail.password_set'] === 'true';
+  const graphSecretSet = values['mail.graph_client_secret_set'] === 'true';
 
   const sendTest = async () => {
     setTesting(true);
@@ -314,14 +315,50 @@ function MailSettings({
             value={provider}
             hint={provider === 'log'
               ? 'כרגע ההודעות נרשמות ביומן בלבד ואינן נשלחות בפועל'
-              : 'ההודעות נשלחות דרך שרת ה־SMTP שמוגדר כאן'}
+              : provider === 'graph'
+                ? 'שליחה דרך Microsoft Graph, ללא תלות ב־SMTP AUTH'
+                : 'ההודעות נשלחות דרך שרת ה־SMTP שמוגדר כאן'}
             onChange={(event) => onChange('mail.provider', event.target.value)}
           >
             <option value="log">יומן בלבד (ללא שליחה)</option>
+            <option value="graph">Microsoft Graph (מומלץ ל־Microsoft 365)</option>
             <option value="smtp">שליחה דרך SMTP</option>
           </SelectField>
 
-          <div className="grid grid--3">
+          {provider === 'graph' && (
+            <>
+              <Banner tone="info" title="רישום יישום ב־Entra ID">
+                נדרש רישום יישום עם הרשאת היישום <strong>Mail.Send</strong> ואישור מנהל
+                (admin consent). מומלץ להגביל אותה לתיבת המוקד בלבד באמצעות
+                Application Access Policy, אחרת היישום יוכל לשלוח בשם כל תיבה בארגון.
+              </Banner>
+              <div className="grid grid--3">
+                <TextField
+                  label="מזהה דייר (Tenant ID)"
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  value={values['mail.graph_tenant_id'] ?? ''}
+                  onChange={(event) => onChange('mail.graph_tenant_id', event.target.value)}
+                />
+                <TextField
+                  label="מזהה יישום (Client ID)"
+                  value={values['mail.graph_client_id'] ?? ''}
+                  onChange={(event) => onChange('mail.graph_client_id', event.target.value)}
+                />
+                <TextField
+                  label="סוד יישום (Client secret)" type="password"
+                  autoComplete="new-password"
+                  hint={graphSecretSet
+                    ? 'סוד שמור. השאירו ריק כדי לא לשנות אותו.'
+                    : 'הערך המלא, לא מזהה הסוד'}
+                  placeholder={graphSecretSet ? '••••••••' : ''}
+                  value={values['mail.graph_client_secret'] ?? ''}
+                  onChange={(event) => onChange('mail.graph_client_secret', event.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          <div className="grid grid--3" hidden={provider === 'graph'}>
             <TextField
               label="שרת SMTP" placeholder="smtp.office365.com"
               value={values['mail.host'] ?? ''}
@@ -343,7 +380,7 @@ function MailSettings({
             </SelectField>
           </div>
 
-          <div className="grid grid--2">
+          <div className="grid grid--2" hidden={provider === 'graph'}>
             <TextField
               label="שם משתמש" type="email" placeholder="support@buqata.muni.il"
               autoComplete="username"
@@ -364,6 +401,7 @@ function MailSettings({
           <div className="grid grid--3">
             <TextField
               label="כתובת השולח" type="email" placeholder="support@buqata.muni.il"
+              hint={provider === 'graph' ? 'התיבה שממנה Graph ישלח' : undefined}
               value={values['mail.from_address'] ?? ''}
               onChange={(event) => onChange('mail.from_address', event.target.value)}
             />

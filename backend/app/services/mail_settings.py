@@ -26,10 +26,14 @@ from ..models import Setting
 log = logging.getLogger("helpdesk.mail")
 
 PASSWORD_KEY = "mail.password"
+GRAPH_SECRET_KEY = "mail.graph_client_secret"
 GROUP = "mail"
 
-#: Returned in place of the stored password. The UI shows whether one is set;
-#: the value itself never leaves the server.
+#: Values that are encrypted at rest and never returned to a client.
+SECRET_KEYS = (PASSWORD_KEY, GRAPH_SECRET_KEY)
+
+#: Returned in place of a stored secret. The UI shows whether one is set; the
+#: value itself never leaves the server.
 MASK = "********"
 
 KEYS = {
@@ -41,12 +45,14 @@ KEYS = {
     "from_address": "mail.from_address",
     "from_name": "mail.from_name",
     "support_inbox": "mail.support_inbox",
+    "graph_tenant_id": "mail.graph_tenant_id",
+    "graph_client_id": "mail.graph_client_id",
 }
 
 
 @dataclass
 class MailConfig:
-    provider: str
+    provider: str          # log | smtp | graph
     host: str
     port: int
     security: str          # auto | ssl | starttls
@@ -55,6 +61,9 @@ class MailConfig:
     from_address: str
     from_name: str
     support_inbox: str
+    graph_tenant_id: str = ""
+    graph_client_id: str = ""
+    graph_client_secret: str = ""
 
     @property
     def use_ssl(self) -> bool:
@@ -63,6 +72,11 @@ class MailConfig:
         if self.security == "starttls":
             return False
         return self.port == 465          # auto
+
+    @property
+    def graph_ready(self) -> bool:
+        return bool(self.graph_tenant_id and self.graph_client_id
+                    and self.graph_client_secret and self.from_address)
 
 
 def _fernet() -> Fernet:
@@ -120,6 +134,10 @@ def resolve(db: Session | None = None) -> MailConfig:
         from_address=pick("from_address", env.SMTP_FROM),
         from_name=pick("from_name", env.SMTP_FROM_NAME),
         support_inbox=pick("support_inbox", env.SUPPORT_INBOX),
+        graph_tenant_id=pick("graph_tenant_id", env.GRAPH_TENANT_ID),
+        graph_client_id=pick("graph_client_id", env.GRAPH_CLIENT_ID),
+        graph_client_secret=(decrypt(stored.get(GRAPH_SECRET_KEY, ""))
+                             or env.GRAPH_CLIENT_SECRET),
     )
 
 
@@ -133,11 +151,11 @@ def apply(db: Session, values: dict[str, str | None], user_id: int | None = None
     for key, value in values.items():
         if not key.startswith("mail."):
             continue
-        if key == "mail.password_set":
-            continue                      # a read-only flag the screen echoes back
-        if key == PASSWORD_KEY:
+        if key.endswith("_set"):
+            continue                      # read-only flags the screen echoes back
+        if key in SECRET_KEYS:
             if value is None or value in ("", MASK):
-                continue
+                continue                  # "leave what is stored", not "clear it"
             value = encrypt(value)
         row = db.get(Setting, key)
         if row:
@@ -153,3 +171,8 @@ def apply(db: Session, values: dict[str, str | None], user_id: int | None = None
 def has_password(db: Session) -> bool:
     row = db.get(Setting, PASSWORD_KEY)
     return bool(row and row.value) or bool(env.SMTP_PASSWORD)
+
+
+def has_graph_secret(db: Session) -> bool:
+    row = db.get(Setting, GRAPH_SECRET_KEY)
+    return bool(row and row.value) or bool(env.GRAPH_CLIENT_SECRET)
