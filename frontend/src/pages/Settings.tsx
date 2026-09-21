@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
-  Bell, Building2, Clock, Cog, Puzzle, Save, ShieldCheck, Tags,
+  Bell, Building2, Clock, Cog, Mail, Puzzle, Save, Send, ShieldCheck, Tags,
 } from 'lucide-react';
 
-import { get, patch, put } from '../lib/api';
+import { get, patch, post, put } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import type { RequestType } from '../lib/types';
 import {
-  Banner, Button, Card, CardHeader, Chip, ErrorState, SkeletonRows, Switch,
+  Banner, Button, Card, CardHeader, Chip, ErrorState, SelectField, SkeletonRows, Switch,
   Tabs, TextField, type TabSpec,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
@@ -19,6 +19,7 @@ const TABS: TabSpec[] = [
   { id: 'general', label: 'כללי', icon: <Building2 size={15} /> },
   { id: 'types', label: 'סוגי בקשה', icon: <Tags size={15} /> },
   { id: 'sla', label: 'זמני תקן', icon: <Clock size={15} /> },
+  { id: 'mail', label: 'דואר אלקטרוני', icon: <Mail size={15} /> },
   { id: 'notifications', label: 'התראות', icon: <Bell size={15} /> },
   { id: 'security', label: 'אבטחה', icon: <ShieldCheck size={15} /> },
   { id: 'integrations', label: 'ממשקים', icon: <Puzzle size={15} /> },
@@ -32,10 +33,18 @@ const FIELDS: Record<string, { key: string; label: string; hint?: string; type?:
       hint: 'true / false' },
   ],
   sla: [
-    { key: 'sla.default_hours', label: 'זמן תקן ברירת מחדל (שעות)', type: 'number',
-      hint: 'משמש כשלא הוגדר זמן תקן בקטגוריה' },
+    { key: 'sla.hours_urgent', label: 'דחופה — זמן תקן (שעות)', type: 'number',
+      hint: 'ברירת מחדל: שעתיים' },
+    { key: 'sla.hours_high', label: 'גבוהה — זמן תקן (שעות)', type: 'number',
+      hint: 'ברירת מחדל: 24 שעות (יום)' },
+    { key: 'sla.hours_normal', label: 'רגילה — זמן תקן (שעות)', type: 'number',
+      hint: 'ברירת מחדל: 72 שעות (שלושה ימים)' },
+    { key: 'sla.hours_low', label: 'נמוכה — זמן תקן (שעות)', type: 'number',
+      hint: 'ברירת מחדל: 168 שעות (שבוע)' },
     { key: 'sla.warning_fraction', label: 'סף התראה מוקדמת',
       hint: 'חלק מזמן התקן שאחריו הקריאה מסומנת "בסיכון". 0.75 = 75%' },
+    { key: 'sla.default_hours', label: 'זמן תקן ברירת מחדל (שעות)', type: 'number',
+      hint: 'שמור לתאימות. זמן התקן נקבע לפי הדחיפות שלמעלה.' },
   ],
   security: [
     { key: 'security.password_min_length', label: 'אורך סיסמה מזערי', type: 'number' },
@@ -122,6 +131,10 @@ export default function Settings() {
                 ))}
               </div>
             </Card>
+          )}
+
+          {tab === 'mail' && (
+            <MailSettings values={values} onChange={update} dirty={dirty} />
           )}
 
           {tab === 'notifications' && (
@@ -235,15 +248,171 @@ function Integrations() {
     <Card>
       <CardHeader title="ממשקים חיצוניים" icon={<Puzzle size={17} />} />
       <div className="card__body stack">
-        <Banner tone="warning" title="לא הוגדרו ספקים">
-          המערכת בנויה עם שכבת ספקים מופשטת עבור דואר, מסרונים ווואטסאפ. כרגע פעיל
-          מצב יומן בלבד: כל הודעה נרשמת עם הנמען והתוכן, אך אינה נשלחת בפועל.
+        <Banner tone="info" title="דואר אלקטרוני מוגדר כאן במערכת">
+          הגדרות שרת הדואר היוצא — שרת, פורט, שם משתמש וסיסמה — נמצאות בלשונית
+          "דואר אלקטרוני", כולל שליחת הודעת בדיקה. אין צורך לערוך קבצים בשרת.
         </Banner>
         <p className="cell-meta">
-          כדי להפעיל ספק אמיתי, הגדירו את משתני הסביבה המתאימים בקובץ backend/.env
-          (למשל EMAIL_PROVIDER=smtp יחד עם פרטי שרת ה-SMTP) והפעילו מחדש את השירות.
+          מסרונים ווואטסאפ עדיין פועלים במצב יומן בלבד: כל הודעה נרשמת עם הנמען
+          והתוכן אך אינה נשלחת. הפעלתם דורשת הגדרת ספק בקובץ backend/.env והפעלה
+          מחדש של השירות.
         </p>
       </div>
     </Card>
+  );
+}
+
+/** Outgoing mail, editable in the application rather than in backend/.env.
+ *
+ *  The password is write-only: the server sends back a mask, the mask is saved
+ *  back unchanged, and only something actually typed replaces the stored value.
+ *  The test button exists because configuration that has never delivered
+ *  anything is a guess -- it reports the SMTP server's own error verbatim,
+ *  which is what makes a wrong port or a disabled SMTP AUTH diagnosable.
+ */
+function MailSettings({
+  values, onChange, dirty,
+}: {
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+  dirty: boolean;
+}) {
+  const toast = useToast();
+  const [testing, setTesting] = useState(false);
+  const [testTo, setTestTo] = useState('');
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const provider = values['mail.provider'] ?? 'log';
+  const passwordSet = values['mail.password_set'] === 'true';
+
+  const sendTest = async () => {
+    setTesting(true);
+    setResult(null);
+    try {
+      const response = await post<{ ok: boolean; error?: string; recipient: string }>(
+        '/settings/mail/test', { to: testTo.trim() || null });
+      if (response.ok) {
+        setResult({ ok: true, text: `נשלחה הודעת בדיקה אל ${response.recipient}` });
+        toast.success('הודעת הבדיקה נשלחה');
+      } else {
+        setResult({ ok: false, text: response.error ?? 'השליחה נכשלה' });
+      }
+    } catch (error) {
+      setResult({ ok: false, text: error instanceof Error ? error.message : 'השליחה נכשלה' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader title="שרת דואר יוצא" icon={<Mail size={17} />} />
+        <div className="card__body stack">
+          <SelectField
+            label="אופן שליחה"
+            value={provider}
+            hint={provider === 'log'
+              ? 'כרגע ההודעות נרשמות ביומן בלבד ואינן נשלחות בפועל'
+              : 'ההודעות נשלחות דרך שרת ה־SMTP שמוגדר כאן'}
+            onChange={(event) => onChange('mail.provider', event.target.value)}
+          >
+            <option value="log">יומן בלבד (ללא שליחה)</option>
+            <option value="smtp">שליחה דרך SMTP</option>
+          </SelectField>
+
+          <div className="grid grid--3">
+            <TextField
+              label="שרת SMTP" placeholder="smtp.office365.com"
+              value={values['mail.host'] ?? ''}
+              onChange={(event) => onChange('mail.host', event.target.value)}
+            />
+            <TextField
+              label="פורט" type="number" placeholder="587"
+              value={values['mail.port'] ?? ''}
+              onChange={(event) => onChange('mail.port', event.target.value)}
+            />
+            <SelectField
+              label="הצפנה"
+              value={values['mail.security'] ?? 'auto'}
+              onChange={(event) => onChange('mail.security', event.target.value)}
+            >
+              <option value="auto">אוטומטי לפי הפורט</option>
+              <option value="starttls">STARTTLS (587)</option>
+              <option value="ssl">SSL/TLS (465)</option>
+            </SelectField>
+          </div>
+
+          <div className="grid grid--2">
+            <TextField
+              label="שם משתמש" type="email" placeholder="support@buqata.muni.il"
+              autoComplete="username"
+              value={values['mail.username'] ?? ''}
+              onChange={(event) => onChange('mail.username', event.target.value)}
+            />
+            <TextField
+              label="סיסמה" type="password" autoComplete="new-password"
+              hint={passwordSet
+                ? 'סיסמה שמורה. השאירו ריק כדי לא לשנות אותה.'
+                : 'עבור תיבה עם אימות דו־שלבי יש להזין סיסמת יישום (App password).'}
+              placeholder={passwordSet ? '••••••••' : ''}
+              value={values['mail.password'] ?? ''}
+              onChange={(event) => onChange('mail.password', event.target.value)}
+            />
+          </div>
+
+          <div className="grid grid--3">
+            <TextField
+              label="כתובת השולח" type="email" placeholder="support@buqata.muni.il"
+              value={values['mail.from_address'] ?? ''}
+              onChange={(event) => onChange('mail.from_address', event.target.value)}
+            />
+            <TextField
+              label="שם השולח"
+              value={values['mail.from_name'] ?? ''}
+              onChange={(event) => onChange('mail.from_name', event.target.value)}
+            />
+            <TextField
+              label="תיבת המוקד" type="email" placeholder="support@buqata.muni.il"
+              hint="מקבלת עותק מכל פעולה בקריאה, ומשמשת ככתובת להשבה"
+              value={values['mail.support_inbox'] ?? ''}
+              onChange={(event) => onChange('mail.support_inbox', event.target.value)}
+            />
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="בדיקת שליחה" icon={<Send size={17} />} />
+        <div className="card__body stack">
+          {dirty && (
+            <Banner tone="warning" title="יש שינויים שלא נשמרו">
+              הבדיקה משתמשת בהגדרות השמורות. שמרו קודם כדי לבדוק את מה שהוזן כעת.
+            </Banner>
+          )}
+          <div className="grid grid--2">
+            <TextField
+              label="לכתובת" type="email"
+              hint="ברירת מחדל: תיבת המוקד"
+              value={testTo}
+              onChange={(event) => setTestTo(event.target.value)}
+            />
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <Button variant="primary" icon={<Send size={16} />} loading={testing}
+                      onClick={() => void sendTest()}>
+                שליחת הודעת בדיקה
+              </Button>
+            </div>
+          </div>
+
+          {result && (
+            <Banner tone={result.ok ? 'success' : 'danger'}
+                    title={result.ok ? 'השליחה הצליחה' : 'השליחה נכשלה'}>
+              {result.text}
+            </Banner>
+          )}
+        </div>
+      </Card>
+    </>
   );
 }

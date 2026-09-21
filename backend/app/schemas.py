@@ -196,3 +196,8 @@ class PreferencesIn(BaseModel):
     language: str = "he"
     font_size: str = "normal"
     contrast: str = "normal"
+
+
+class MailTestIn(BaseModel):
+    """Where to send the configuration test. Defaults to the support inbox."""
+    to: str | None = None

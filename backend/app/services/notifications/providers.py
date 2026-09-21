@@ -16,11 +16,9 @@ from email.header import Header
 from email.message import EmailMessage
 from email.utils import formataddr
 
-from ...config import (
-    EMAIL_PROVIDER, SMS_PROVIDER, SMTP_FROM, SMTP_FROM_NAME, SMTP_HOST, SMTP_PASSWORD,
-    SMTP_PORT, SMTP_SSL, SMTP_USER, SUPPORT_INBOX, WHATSAPP_PROVIDER,
-)
+from ...config import SMS_PROVIDER, WHATSAPP_PROVIDER
 from ...constants import Channel
+from .. import mail_settings
 
 log = logging.getLogger("helpdesk.notifications")
 
@@ -65,71 +63,66 @@ class LogProvider(Provider):
 
 
 class SmtpEmailProvider(Provider):
+    """Configured per send, from the settings the administrator edited in the
+    application, falling back to .env."""
     name = "smtp"
 
-    def _use_ssl(self) -> bool:
-        """465 is TLS from the first byte, 587 upgrades with STARTTLS."""
-        if SMTP_SSL in {"1", "true", "yes"}:
-            return True
-        if SMTP_SSL in {"0", "false", "no"}:
-            return False
-        return SMTP_PORT == 465
+    def __init__(self, cfg):
+        self.cfg = cfg
 
     def send(self, recipient: str, subject: str, body: str) -> SendResult:
-        if not SMTP_HOST:
-            return SendResult(False, self.name, "SMTP_HOST is not configured")
+        cfg = self.cfg
+        if not cfg.host:
+            return SendResult(False, self.name, "לא הוגדר שרת דואר יוצא")
         try:
             message = EmailMessage()
-            message["From"] = formataddr((str(Header(SMTP_FROM_NAME, "utf-8")), SMTP_FROM))
+            message["From"] = formataddr(
+                (str(Header(cfg.from_name, "utf-8")), cfg.from_address))
             message["To"] = recipient
             message["Subject"] = subject
             # A requester who hits reply should reach the desk. Without this the
             # reply goes to the sending mailbox, which nobody reads.
-            if SUPPORT_INBOX and SUPPORT_INBOX != SMTP_FROM:
-                message["Reply-To"] = SUPPORT_INBOX
+            if cfg.support_inbox and cfg.support_inbox != cfg.from_address:
+                message["Reply-To"] = cfg.support_inbox
             message.set_content(body)
 
-            if self._use_ssl():
-                with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=20) as smtp:
-                    if SMTP_USER:
-                        smtp.login(SMTP_USER, SMTP_PASSWORD)
+            if cfg.use_ssl:
+                with smtplib.SMTP_SSL(cfg.host, cfg.port, timeout=20) as smtp:
+                    if cfg.username:
+                        smtp.login(cfg.username, cfg.password)
                     smtp.send_message(message)
             else:
-                with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as smtp:
+                with smtplib.SMTP(cfg.host, cfg.port, timeout=20) as smtp:
                     smtp.starttls()
-                    if SMTP_USER:
-                        smtp.login(SMTP_USER, SMTP_PASSWORD)
+                    if cfg.username:
+                        smtp.login(cfg.username, cfg.password)
                     smtp.send_message(message)
             return SendResult(True, self.name)
         except Exception as exc:                      # noqa: BLE001 - reported, not raised
             return SendResult(False, self.name, str(exc))
 
     def healthy(self) -> tuple[bool, str]:
-        if not SMTP_HOST:
-            return False, "SMTP_HOST חסר"
-        mode = "SSL" if self._use_ssl() else "STARTTLS"
-        return True, f"SMTP {SMTP_HOST}:{SMTP_PORT} ({mode}) כ־{SMTP_FROM}"
+        cfg = self.cfg
+        if not cfg.host:
+            return False, "לא הוגדר שרת דואר יוצא"
+        if cfg.username and not cfg.password:
+            return False, f"חסרה סיסמה עבור {cfg.username}"
+        mode = "SSL" if cfg.use_ssl else "STARTTLS"
+        return True, f"{cfg.host}:{cfg.port} ({mode}) כ־{cfg.from_address}"
 
 
-_EMAIL = {"log": lambda: LogProvider(Channel.EMAIL), "smtp": SmtpEmailProvider}
-_SMS = {"log": lambda: LogProvider(Channel.SMS)}
-_WHATSAPP = {"log": lambda: LogProvider(Channel.WHATSAPP)}
-
-
-def _resolve(table: dict, key: str, channel: str) -> Provider:
-    factory = table.get(key)
-    if factory is None:
-        log.warning("unknown provider %r for %s, falling back to log", key, channel)
-        return LogProvider(channel)
-    return factory()
-
-
-PROVIDERS: dict[str, Provider] = {
-    Channel.EMAIL: _resolve(_EMAIL, EMAIL_PROVIDER, Channel.EMAIL),
-    Channel.SMS: _resolve(_SMS, SMS_PROVIDER, Channel.SMS),
-    Channel.WHATSAPP: _resolve(_WHATSAPP, WHATSAPP_PROVIDER, Channel.WHATSAPP),
-}
-
-
-def provider_for(channel: str) -> Provider:
-    return PROVIDERS.get(channel, LogProvider(channel))
+def provider_for(channel: str, db=None) -> Provider:
+    """Resolved per call, because mail configuration now lives in the database
+    and an administrator can change it without a restart."""
+    if channel == Channel.EMAIL:
+        cfg = mail_settings.resolve(db)
+        if cfg.provider == "smtp":
+            return SmtpEmailProvider(cfg)
+        if cfg.provider != "log":
+            log.warning("unknown email provider %r, falling back to log", cfg.provider)
+        return LogProvider(Channel.EMAIL)
+    if channel == Channel.SMS and SMS_PROVIDER != "log":
+        log.warning("unknown sms provider %r, falling back to log", SMS_PROVIDER)
+    if channel == Channel.WHATSAPP and WHATSAPP_PROVIDER != "log":
+        log.warning("unknown whatsapp provider %r, falling back to log", WHATSAPP_PROVIDER)
+    return LogProvider(channel)

@@ -95,7 +95,7 @@ def emit(
             db.add(delivery)
             continue
 
-        provider = provider_for(channel)
+        provider = provider_for(channel, db)
         result = provider.send(address, subject, body)
         delivery.provider = result.provider
         delivery.attempts = 1

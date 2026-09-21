@@ -11,7 +11,7 @@ from ..models import (
     User, WorkflowRule,
 )
 from ..security import hash_password, password_problem
-from ..services import audit
+from ..services import audit, mail_settings
 from .deps import current_user, require_admin, require_staff
 from . import serializers as S
 
@@ -368,7 +368,24 @@ def get_settings(
     rows = db.query(Setting).order_by(Setting.group, Setting.key).all()
     grouped: dict[str, dict] = {}
     for row in rows:
-        grouped.setdefault(row.group, {})[row.key] = row.value
+        # The mailbox password never leaves the server. The screen needs to know
+        # only whether one is stored, so it can say so and leave it alone.
+        value = mail_settings.MASK if row.key == mail_settings.PASSWORD_KEY else row.value
+        grouped.setdefault(row.group, {})[row.key] = value
+
+    cfg = mail_settings.resolve(db)
+    grouped.setdefault(mail_settings.GROUP, {}).update({
+        "mail.provider": cfg.provider,
+        "mail.host": cfg.host,
+        "mail.port": str(cfg.port),
+        "mail.security": cfg.security,
+        "mail.username": cfg.username,
+        "mail.from_address": cfg.from_address,
+        "mail.from_name": cfg.from_name,
+        "mail.support_inbox": cfg.support_inbox,
+        "mail.password": mail_settings.MASK if mail_settings.has_password(db) else "",
+        "mail.password_set": "true" if mail_settings.has_password(db) else "false",
+    })
     return {"groups": grouped}
 
 
@@ -378,16 +395,61 @@ def update_settings(
     user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    # mail.* is handled apart: the password is encrypted, and a masked or empty
+    # one means "keep what is stored" rather than "clear it".
+    mail_values = {k: v for k, v in data.values.items() if k.startswith("mail.")}
+    if mail_values:
+        mail_settings.apply(db, mail_values, user_id=user.id)
+
     for key, value in data.values.items():
+        if key.startswith("mail."):
+            continue
         row = db.get(Setting, key)
         if row:
             row.value = value
             row.updated_by_id = user.id
         else:
             db.add(Setting(key=key, value=value, updated_by_id=user.id))
+    # The password itself is never written to the audit trail, only its key.
     audit.record(db, action="settings_updated", actor=user, details={"keys": list(data.values)})
     db.commit()
     return {"ok": True}
+
+
+@router.post("/settings/mail/test")
+def send_test_mail(
+    data: schemas.MailTestIn,
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Send one message with the stored configuration and report what happened.
+
+    Configuration that has never delivered anything is a guess, so the screen
+    that edits it can prove it works before the council relies on it.
+    """
+    from ..services.notifications.providers import SmtpEmailProvider
+
+    cfg = mail_settings.resolve(db)
+    recipient = (data.to or cfg.support_inbox or "").strip()
+    if not recipient:
+        raise HTTPException(400, "יש להזין כתובת לשליחת הבדיקה")
+    if cfg.provider != "smtp":
+        raise HTTPException(
+            400, "ספק הדואר מוגדר כ״יומן״ — יש לבחור SMTP ולשמור לפני בדיקה")
+
+    result = SmtpEmailProvider(cfg).send(
+        recipient,
+        "בדיקת הגדרות דואר — מוקד שירות",
+        "הודעת בדיקה ממוקד השירות.\n"
+        "אם הגיעה, הגדרות הדואר תקינות והמערכת יכולה לשלוח אישורים והתראות.\n"
+        f"\n—\n{cfg.from_name}",
+    )
+    audit.record(db, action="mail_test", actor=user,
+                 details={"to": recipient, "ok": result.ok, "error": result.error})
+    db.commit()
+    if not result.ok:
+        return {"ok": False, "error": result.error, "recipient": recipient}
+    return {"ok": True, "recipient": recipient}
 
 
 # --- knowledge base ---------------------------------------------------------

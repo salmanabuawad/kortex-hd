@@ -195,13 +195,16 @@ def system_health(
     components.append({"key": "application", "label": "שרת היישום", "state": "ok",
                        "detail": "FastAPI פעיל"})
 
+    from ..services import mail_settings
     from ..services.notifications.providers import provider_for
+    # Email is configurable in the application now, so its state comes from what
+    # is actually stored, not from what .env said when the process started.
     for key, label, configured in (
-        ("email", "דואר אלקטרוני", EMAIL_PROVIDER),
+        ("email", "דואר אלקטרוני", mail_settings.resolve(db).provider),
         ("sms", "מסרונים", SMS_PROVIDER),
         ("whatsapp", "וואטסאפ", WHATSAPP_PROVIDER),
     ):
-        ok, detail = provider_for(key).healthy()
+        ok, detail = provider_for(key, db).healthy()
         components.append({
             "key": key, "label": label,
             "state": "ok" if ok else "error",
