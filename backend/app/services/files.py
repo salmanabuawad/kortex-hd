@@ -5,7 +5,10 @@ from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
 
-from ..config import ALLOWED_UPLOAD_EXTENSIONS, ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, UPLOAD_DIR
+from ..config import (
+    ALLOWED_UPLOAD_EXTENSIONS, ALLOWED_UPLOAD_TYPES, EXTENSION_CONTENT_TYPES,
+    GENERIC_UPLOAD_TYPES, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, UPLOAD_DIR, WEBM_CONTENT_TYPES,
+)
 
 CHUNK = 1024 * 1024
 
@@ -17,6 +20,26 @@ def _safe_extension(filename: str) -> str:
     return ext
 
 
+def _resolve_type(ext: str, declared: str | None) -> str:
+    """Decide what this file actually is.
+
+    The extension has already been checked against the allow-list, so it is the
+    trustworthy half and the stored type is derived from it. The client's header
+    is only used to reject a positively wrong claim, and to break the .webm tie
+    between audio and video.
+
+    Browsers send application/octet-stream for a .docx or .pdf often enough --
+    Windows with no Office association, some drag-and-drop paths, files off a
+    share -- that treating it as a refusal blocked ordinary documents.
+    """
+    header = (declared or "").split(";")[0].strip().lower()
+    if header and header not in ALLOWED_UPLOAD_TYPES and header not in GENERIC_UPLOAD_TYPES:
+        raise HTTPException(400, f"סוג התוכן {header} אינו נתמך")
+    if ext == ".webm":
+        return WEBM_CONTENT_TYPES.get(header, "video/webm")
+    return EXTENSION_CONTENT_TYPES[ext]
+
+
 def store(upload: UploadFile, *, subdir: str = "") -> dict:
     """Validate and persist one upload. Returns the attachment fields.
 
@@ -26,10 +49,7 @@ def store(upload: UploadFile, *, subdir: str = "") -> dict:
     """
     original = Path(upload.filename or "file").name
     ext = _safe_extension(original)
-
-    content_type = (upload.content_type or "application/octet-stream").split(";")[0].strip()
-    if content_type not in ALLOWED_UPLOAD_TYPES:
-        raise HTTPException(400, f"סוג התוכן {content_type} אינו נתמך")
+    content_type = _resolve_type(ext, upload.content_type)
 
     target_dir = UPLOAD_DIR / subdir if subdir else UPLOAD_DIR
     target_dir.mkdir(parents=True, exist_ok=True)

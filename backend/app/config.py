@@ -59,6 +59,33 @@ ALLOWED_UPLOAD_EXTENSIONS = {
 # or show them in place. Everything else stays a download.
 INLINE_PREVIEW_PREFIXES = ("image/", "video/", "audio/")
 
+# What a browser sends when it has no idea what the file is: Windows without
+# Office registered for .docx, several drag-and-drop paths, files off a network
+# share. Refusing these rejected perfectly ordinary PDFs and Word documents, so
+# they are tolerated and the extension decides instead.
+GENERIC_UPLOAD_TYPES = {
+    "", "application/octet-stream", "binary/octet-stream",
+    "application/zip", "application/x-zip-compressed",
+}
+
+# The extension is validated against ALLOWED_UPLOAD_EXTENSIONS before this is
+# consulted, so it -- not the client's header -- is what the stored type is
+# derived from. A header cannot then talk a .pdf into being previewed as video.
+EXTENSION_CONTENT_TYPES = {
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+    ".gif": "image/gif", ".webp": "image/webp", ".heic": "image/heic",
+    ".pdf": "application/pdf", ".txt": "text/plain", ".csv": "text/csv",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".mp4": "video/mp4", ".mov": "video/quicktime", ".3gp": "video/3gpp",
+    ".m4a": "audio/mp4", ".mp3": "audio/mpeg", ".ogg": "audio/ogg",
+    ".oga": "audio/ogg", ".wav": "audio/wav", ".aac": "audio/aac",
+}
+# .webm carries either, so the declared type breaks the tie.
+WEBM_CONTENT_TYPES = {"audio/webm": "audio/webm", "video/webm": "video/webm"}
+
 # Rate limits: (requests, window seconds)
 LOGIN_RATE_LIMIT = (int(os.getenv("LOGIN_RATE_LIMIT", "8")), 300)
 GUEST_RATE_LIMIT = (int(os.getenv("GUEST_RATE_LIMIT", "60")), 300)

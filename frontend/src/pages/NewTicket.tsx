@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -106,9 +106,14 @@ export default function NewTicket() {
     return reasons.length ? reasons : null;
   }, [category, isNewService, cost, hours]);
 
+  /** When the current step was entered, so a press that belongs to the previous
+   *  step cannot be counted as a press on this one. */
+  const stepEnteredAt = useRef(Date.now());
+
   const goTo = (id: StepId) => {
     setError('');
     setErrorField(null);
+    stepEnteredAt.current = Date.now();
     setStep(id);
   };
 
@@ -142,14 +147,12 @@ export default function NewTicket() {
     setPriority(next.default_priority);
     setRequestTypeId((current) =>
       next.request_types.some((rt) => rt.id === current) ? current : null);
-    setError('');
-    setStep(next.request_types.length > 0 ? 'type' : 'details');
+    goTo(next.request_types.length > 0 ? 'type' : 'details');
   };
 
   const chooseType = (type: RequestType) => {
     setRequestTypeId(type.id);
-    setError('');
-    setStep('details');
+    goTo('details');
   };
 
   useEffect(() => {
@@ -164,6 +167,10 @@ export default function NewTicket() {
       goNext();
       return;
     }
+    // Belt and braces for the same fault the keys above fix: nobody reaches the
+    // last step and submits inside a quarter of a second, so a submit that
+    // fast is the tail of the press that brought them here.
+    if (Date.now() - stepEnteredAt.current < 250) return;
     if (!categoryId) { setError('יש לבחור קטגוריה'); goTo('category'); return; }
     if (subject.trim().length < 3) {
       goTo('details'); setError('יש להזין נושא לקריאה'); setErrorField('subject'); return;
@@ -458,13 +465,20 @@ export default function NewTicket() {
           <Button type="button" variant="ghost" onClick={() => navigate('/tickets')}>
             ביטול
           </Button>
+          {/* The keys matter. Both branches render a <Button> at the same place
+              in the tree, so without them React keeps the DOM node and only
+              flips type="button" to type="submit". The click that advanced the
+              step was still in flight, so the browser then activated the very
+              same element as the submit button: one press on "המשך" opened the
+              ticket and skipped this step entirely. Distinct keys force a new
+              node, which the in-flight click cannot activate. */}
           {isLast ? (
-            <Button type="submit" variant="primary" loading={busy} iconEnd
+            <Button key="submit" type="submit" variant="primary" loading={busy} iconEnd
                     icon={<Send size={17} />}>
               שליחת הקריאה
             </Button>
           ) : (
-            <Button type="button" variant="primary" onClick={goNext} iconEnd
+            <Button key="next" type="button" variant="primary" onClick={goNext} iconEnd
                     icon={<ArrowRight className="dir-icon" size={16} />}>
               המשך
             </Button>

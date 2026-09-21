@@ -477,6 +477,31 @@ def test_media_uploads_and_inline_disposition(client, world):
     download = client.get(f"/api/attachments/ticket/{ids['photo.jpg']}", headers=requester)
     assert "attachment" in download.headers["content-disposition"]
 
+    # Browsers frequently send octet-stream for a document; the extension is
+    # already validated, so it decides, and the stored type comes from it.
+    for name, declared in [("report.pdf", "application/octet-stream"),
+                           ("letter.docx", "application/octet-stream"),
+                           ("letter.docx", "application/zip"),
+                           ("sheet.xlsx", "")]:
+        res = client.post(
+            f"/api/tickets/{ticket_id}/attachments", headers=requester,
+            files={"file": (name, b"stub-bytes", declared)})
+        assert res.status_code == 201, f"{name} as {declared!r}: {res.text}"
+
+    stored = client.post(
+        f"/api/tickets/{ticket_id}/attachments", headers=requester,
+        files={"file": ("report.pdf", b"stub", "application/octet-stream")}).json()
+    assert stored["content_type"] == "application/pdf"
+
+    # A header still cannot talk a document into the inline media path.
+    liar = client.post(
+        f"/api/tickets/{ticket_id}/attachments", headers=requester,
+        files={"file": ("sneaky.pdf", b"stub", "video/mp4")}).json()
+    assert liar["content_type"] == "application/pdf"
+    forced_liar = client.get(f"/api/attachments/ticket/{liar['id']}?inline=true",
+                             headers=requester)
+    assert "attachment" in forced_liar.headers["content-disposition"]
+
     # A text file cannot be coaxed into rendering in the page.
     doc = client.post(
         f"/api/tickets/{ticket_id}/attachments", headers=requester,
