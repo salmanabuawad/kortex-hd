@@ -436,3 +436,50 @@ def test_upload_rejects_unsupported_type(client, world):
         f"/api/tickets/{ticket_id}/attachments", headers=requester,
         files={"file": ("note.txt", b"hello", "text/plain")})
     assert good.status_code == 201
+
+    # A content type on the list is still refused when the extension is not:
+    # both halves have to agree, so a .exe cannot arrive labelled as a video.
+    mismatched = client.post(
+        f"/api/tickets/{ticket_id}/attachments", headers=requester,
+        files={"file": ("payload.exe", b"MZ", "video/mp4")})
+    assert mismatched.status_code == 400
+
+
+def test_media_uploads_and_inline_disposition(client, world):
+    """Photographs, video and voice notes are accepted, and only media may be
+    served inline -- a document asked for inline still downloads."""
+    requester = auth(client, world, "requester")
+    created = client.post("/api/tickets", headers=requester, json={
+        "subject": "מדיה", "description": "בדיקה",
+        "category_id": world["category"], "request_type_id": world["fault"]})
+    ticket_id = created.json()["id"]
+
+    media = [
+        ("photo.jpg", b"\xff\xd8\xff\xe0jpeg", "image/jpeg"),
+        ("clip.mp4", b"\x00\x00\x00\x20ftypmp4", "video/mp4"),
+        ("clip.mov", b"\x00\x00\x00\x14ftypqt", "video/quicktime"),
+        ("voice.webm", b"\x1a\x45\xdf\xa3webm", "audio/webm"),
+        ("voice.m4a", b"\x00\x00\x00\x20ftypM4A", "audio/mp4"),
+    ]
+    ids = {}
+    for name, body, content_type in media:
+        res = client.post(
+            f"/api/tickets/{ticket_id}/attachments", headers=requester,
+            files={"file": (name, body, content_type)})
+        assert res.status_code == 201, f"{name}: {res.text}"
+        ids[name] = res.json()["id"]
+
+    inline = client.get(f"/api/attachments/ticket/{ids['photo.jpg']}?inline=true",
+                        headers=requester)
+    assert inline.status_code == 200
+    assert "attachment" not in inline.headers.get("content-disposition", "")
+
+    download = client.get(f"/api/attachments/ticket/{ids['photo.jpg']}", headers=requester)
+    assert "attachment" in download.headers["content-disposition"]
+
+    # A text file cannot be coaxed into rendering in the page.
+    doc = client.post(
+        f"/api/tickets/{ticket_id}/attachments", headers=requester,
+        files={"file": ("note.txt", b"hello", "text/plain")}).json()
+    forced = client.get(f"/api/attachments/ticket/{doc['id']}?inline=true", headers=requester)
+    assert "attachment" in forced.headers["content-disposition"]

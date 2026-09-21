@@ -1,12 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRightLeft, CheckCircle2, Clock, Download, ExternalLink, FileText, History,
-  Link2, ListTodo, MessageSquare, Paperclip, Plus, RotateCcw, ShieldCheck, StickyNote, Trash2, Upload,
-  UserRound, X, XCircle,
+  Image as ImageIcon, Link2, ListTodo, Loader2, MessageSquare, Mic, Paperclip, Plus, RotateCcw,
+  ShieldCheck, StickyNote, Trash2, Upload, UserRound, Video, X, XCircle,
 } from 'lucide-react';
 
-import { downloadAttachment, get, patch, post, upload } from '../lib/api';
+import { attachmentObjectUrl, downloadAttachment, get, patch, post, upload } from '../lib/api';
 import { isStaff, useAuth } from '../lib/auth';
 import { useAction, useAsync } from '../lib/hooks';
 import {
@@ -26,6 +26,7 @@ import {
 } from '../components/ui';
 import { useToast } from '../components/ui/toast';
 import { LifecycleRail, PriorityChip, StatusChip } from '../components/tickets';
+import { UPLOAD_ACCEPT, kindOf } from '../components/media/MediaPicker';
 import {
   ApprovalRequestDialog, NoteDialog, SubtaskDialog, TransferDialog,
 } from '../components/tickets/dialogs';
@@ -797,7 +798,7 @@ function FilesTab({
         title="קבצים מצורפים"
         action={
           <>
-            <input ref={inputRef} type="file" hidden onChange={choose} />
+            <input ref={inputRef} type="file" hidden accept={UPLOAD_ACCEPT} onChange={choose} />
             <Button variant="primary" size="sm" loading={busy}
                     icon={<Upload size={15} />} onClick={() => inputRef.current?.click()}>
               צירוף קובץ
@@ -809,16 +810,14 @@ function FilesTab({
         {loading ? <SkeletonRows rows={3} /> : items.length === 0 ? (
           <EmptyState
             title="אין קבצים מצורפים"
-            text="ניתן לצרף תמונות, מסמכים וקובצי PDF עד 20 מגהבייט."
+            text="ניתן לצרף תמונות, וידאו, הקלטות קוליות ומסמכים עד 50 מגהבייט."
             icon={<Paperclip />}
           />
         ) : (
           <div className="worklist">
             {items.map((file) => (
               <div className="work-item" key={file.id}>
-                <span className="work-item__icon work-item__icon--internal">
-                  <FileText size={17} />
-                </span>
+                <AttachmentPreview file={file} />
                 <div className="grow">
                   <div className="work-item__title">{file.filename}</div>
                   <div className="work-item__meta">
@@ -838,6 +837,59 @@ function FilesTab({
       </div>
     </Card>
   );
+}
+
+/** Shows a photograph or plays a recording without leaving the ticket.
+ *
+ *  Media is fetched lazily -- a ticket with several phone videos should not
+ *  pull tens of megabytes just because someone opened the files tab -- so the
+ *  reader asks for each one. Anything that is not media keeps the plain icon.
+ */
+function AttachmentPreview({ file }: { file: Attachment }) {
+  const kind = kindOf(file);
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+
+  if (kind === 'file') {
+    return (
+      <span className="work-item__icon work-item__icon--internal">
+        <FileText size={17} />
+      </span>
+    );
+  }
+
+  if (!url) {
+    const Icon = kind === 'image' ? ImageIcon : kind === 'video' ? Video : Mic;
+    return (
+      <button
+        type="button"
+        className="attach-preview attach-preview--idle"
+        disabled={loading}
+        aria-label={`הצגת ${file.filename}`}
+        onClick={() => {
+          setLoading(true);
+          attachmentObjectUrl('ticket', file.id)
+            .then(setUrl)
+            .catch(() => setFailed(true))
+            .finally(() => setLoading(false));
+        }}
+      >
+        {loading ? <Loader2 size={17} className="spin" /> : <Icon size={17} />}
+        <span>{failed ? 'שגיאה' : loading ? '' : 'הצגה'}</span>
+      </button>
+    );
+  }
+
+  if (kind === 'image') {
+    return <img className="attach-preview" src={url} alt={file.filename} />;
+  }
+  if (kind === 'video') {
+    return <video className="attach-preview" src={url} controls preload="metadata" />;
+  }
+  return <audio className="attach-preview attach-preview--audio" src={url} controls />;
 }
 
 /* -------------------------------------------------------------------------- */

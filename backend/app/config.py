@@ -22,11 +22,15 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", FRONTEND_URL)
 
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
-MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "20"))
+# A phone video of a fault runs to tens of megabytes, so the ceiling sits well
+# above the old document-only limit. nginx allows 64m on this vhost; staying
+# under it means an oversized upload is refused by us, with a Hebrew message,
+# rather than cut off by nginx with an opaque 413.
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "50"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
-# Deliberately conservative: council staff exchange documents and photographs,
-# not archives or executables.
+# Deliberately conservative: council staff exchange documents, photographs and
+# recordings of a fault, not archives or executables.
 ALLOWED_UPLOAD_TYPES = {
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/heic",
     "application/pdf",
@@ -35,11 +39,25 @@ ALLOWED_UPLOAD_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    # Video: what phone cameras actually hand over. iPhone records QuickTime,
+    # Android mp4 or 3gpp, and a desktop screen capture arrives as webm.
+    "video/mp4", "video/quicktime", "video/webm", "video/3gpp",
+    # Audio: MediaRecorder emits webm on Chrome and Firefox and mp4 on Safari,
+    # so a voice note recorded in the browser is one of those two. The rest
+    # cover a file picked from disk or sent from a phone.
+    "audio/webm", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav",
+    "audio/x-wav", "audio/aac", "audio/x-m4a", "audio/3gpp",
 }
 ALLOWED_UPLOAD_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic",
     ".pdf", ".txt", ".csv", ".doc", ".docx", ".xls", ".xlsx",
+    ".mp4", ".mov", ".webm", ".3gp",
+    ".m4a", ".mp3", ".ogg", ".oga", ".wav", ".aac",
 }
+
+# Types safe to hand back with an inline disposition so the browser can play
+# or show them in place. Everything else stays a download.
+INLINE_PREVIEW_PREFIXES = ("image/", "video/", "audio/")
 
 # Rate limits: (requests, window seconds)
 LOGIN_RATE_LIMIT = (int(os.getenv("LOGIN_RATE_LIMIT", "8")), 300)

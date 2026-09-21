@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from .api import admin, approvals, auth, display, external, insights, subtasks, tickets
 from .api.deps import current_user, visible_ticket
-from .config import COUNCIL_NAME, FRONTEND_URL, UPLOAD_DIR
+from .config import COUNCIL_NAME, FRONTEND_URL, INLINE_PREVIEW_PREFIXES, UPLOAD_DIR
 from .db import get_db
 from .models import Subtask, SubtaskAttachment, TicketAttachment
 from .services import files
@@ -43,9 +43,28 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 attachments = APIRouter(prefix="/api/attachments", tags=["attachments"])
 
 
+def _serve(row, *, inline: bool) -> FileResponse:
+    """One file, either as a download or in place.
+
+    Passing `filename` makes Starlette send Content-Disposition: attachment,
+    which is what we want for a document but not for a photograph or a voice
+    note the reader wants to see and hear without leaving the ticket. Only
+    media is ever served inline, so a .csv cannot be coaxed into rendering in
+    the page. FileResponse answers Range requests either way, so seeking
+    within a video does not refetch the whole file.
+    """
+    can_inline = inline and row.content_type.startswith(INLINE_PREVIEW_PREFIXES)
+    return FileResponse(
+        files.path_for(row.stored_name),
+        media_type=row.content_type,
+        filename=None if can_inline else row.filename,
+    )
+
+
 @attachments.get("/ticket/{attachment_id}")
 def download_ticket_attachment(
     attachment_id: int,
+    inline: bool = False,
     user=Depends(current_user),
     db: Session = Depends(get_db),
 ):
@@ -53,13 +72,13 @@ def download_ticket_attachment(
     if not row:
         raise HTTPException(404, "הקובץ לא נמצא")
     visible_ticket(row.ticket_id, user, db)          # authorization via parent ticket
-    return FileResponse(files.path_for(row.stored_name),
-                        filename=row.filename, media_type=row.content_type)
+    return _serve(row, inline=inline)
 
 
 @attachments.get("/subtask/{attachment_id}")
 def download_subtask_attachment(
     attachment_id: int,
+    inline: bool = False,
     user=Depends(current_user),
     db: Session = Depends(get_db),
 ):
@@ -70,8 +89,7 @@ def download_subtask_attachment(
     if not subtask:
         raise HTTPException(404, "הקובץ לא נמצא")
     visible_ticket(subtask.ticket_id, user, db)
-    return FileResponse(files.path_for(row.stored_name),
-                        filename=row.filename, media_type=row.content_type)
+    return _serve(row, inline=inline)
 
 
 for module in (auth, tickets, subtasks, external, approvals, admin, insights, display):

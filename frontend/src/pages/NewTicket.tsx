@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Building2, Check, Database, LifeBuoy, Lightbulb,
-  Network, Printer, Send, ShieldCheck, Sparkles, TicketPlus,
+  Network, Paperclip, Printer, Send, ShieldCheck, Sparkles, TicketPlus,
 } from 'lucide-react';
 
-import { get, post } from '../lib/api';
+import { get, post, upload } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import { formatCurrency, formatHours } from '../lib/format';
 import { priorityLabel } from '../lib/labels';
@@ -15,6 +15,7 @@ import {
   TextAreaField, TextField,
 } from '../components/ui';
 import { PageFrame } from '../components/layout/Shell';
+import { MediaPicker, type PendingMedia } from '../components/media/MediaPicker';
 import { useToast } from '../components/ui/toast';
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -30,7 +31,7 @@ const ICONS: Record<string, React.ReactNode> = {
 
 const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
-type StepId = 'category' | 'type' | 'details';
+type StepId = 'category' | 'type' | 'details' | 'media';
 
 export default function NewTicket() {
   const navigate = useNavigate();
@@ -47,8 +48,11 @@ export default function NewTicket() {
   const [priority, setPriority] = useState<Priority>('normal');
   const [cost, setCost] = useState('');
   const [hours, setHours] = useState('');
+  const [media, setMedia] = useState<PendingMedia[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  /** Set while attachments upload, after the ticket itself already exists. */
+  const [uploading, setUploading] = useState('');
 
   const category = useMemo(
     () => categories.data?.items.find((c) => c.id === categoryId) ?? null,
@@ -71,7 +75,9 @@ export default function NewTicket() {
   const hasTypes = (category?.request_types.length ?? 0) > 0;
 
   const steps = useMemo<StepId[]>(
-    () => (hasTypes ? ['category', 'type', 'details'] : ['category', 'details']),
+    () => (hasTypes
+      ? ['category', 'type', 'details', 'media']
+      : ['category', 'details', 'media']),
     [hasTypes],
   );
   const stepIndex = Math.max(0, steps.indexOf(step));
@@ -104,6 +110,13 @@ export default function NewTicket() {
     if (step === 'category' && !categoryId) {
       setError('יש לבחור קטגוריה');
       return;
+    }
+    // Validate the details here rather than only on submit: now that media is
+    // a step of its own, an empty subject would otherwise surface a step later,
+    // away from the field it belongs to.
+    if (step === 'details') {
+      if (subject.trim().length < 3) { setError('יש להזין נושא לקריאה'); return; }
+      if (!description.trim()) { setError('יש לתאר את הבקשה'); return; }
     }
     const next = steps[stepIndex + 1];
     if (next) goTo(next);
@@ -142,8 +155,8 @@ export default function NewTicket() {
       return;
     }
     if (!categoryId) { setError('יש לבחור קטגוריה'); goTo('category'); return; }
-    if (subject.trim().length < 3) { setError('יש להזין נושא לקריאה'); return; }
-    if (!description.trim()) { setError('יש לתאר את הבקשה'); return; }
+    if (subject.trim().length < 3) { setError('יש להזין נושא לקריאה'); goTo('details'); return; }
+    if (!description.trim()) { setError('יש לתאר את הבקשה'); goTo('details'); return; }
 
     setError('');
     setBusy(true);
@@ -157,11 +170,30 @@ export default function NewTicket() {
         estimated_cost: cost ? Number(cost) : null,
         estimated_hours: hours ? Number(hours) : null,
       });
+
+      // The ticket exists from here on. Attachments are uploaded one at a time
+      // against its id, and a failure among them must not discard the ticket
+      // the user just wrote -- it is reported, and the ticket still opens.
+      const failed: string[] = [];
+      for (const [index, item] of media.entries()) {
+        setUploading(`מעלה קובץ ${index + 1} מתוך ${media.length}…`);
+        try {
+          await upload(`/tickets/${ticket.id}/attachments`, item.file);
+        } catch {
+          failed.push(item.file.name);
+        }
+      }
+      setUploading('');
+
       toast.success(`נפתחה קריאה ${ticket.number}`);
+      if (failed.length) {
+        toast.error(`לא הועלו: ${failed.join(', ')}. אפשר לצרף אותם בלשונית הקבצים.`);
+      }
       navigate(`/tickets/${ticket.id}`, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'פתיחת הקריאה נכשלה');
     } finally {
+      setUploading('');
       setBusy(false);
     }
   };
@@ -174,6 +206,7 @@ export default function NewTicket() {
     category: 'במה מדובר?',
     type: 'סוג הפנייה',
     details: 'פרטי הפנייה',
+    media: 'תמונות והקלטות',
   };
 
   return (
@@ -355,6 +388,38 @@ export default function NewTicket() {
               </Card>
             </div>
           )}
+
+          {step === 'media' && (
+            <div className="wizard__pane">
+              <Card>
+                <CardHeader icon={<Paperclip size={18} />} title="תמונות, וידאו והקלטות" />
+                <div className="card__body stack">
+                  <MediaPicker items={media} onChange={setMedia} disabled={busy} />
+
+                  <Banner tone="info" title="מה כדאי לצרף">
+                    צילום מסך או תמונה של התקלה, הודעת שגיאה, או הקלטה קולית קצרה
+                    שמתארת מה קרה. הקבצים יצורפו לקריאה מיד לאחר פתיחתה.
+                  </Banner>
+                </div>
+              </Card>
+
+              <Card>
+                <CardHeader icon={<Check size={18} />} title="סיכום לפני שליחה" />
+                <div className="card__body">
+                  <dl className="summary">
+                    <div><dt>קטגוריה</dt><dd>{category?.name ?? '—'}</dd></div>
+                    {requestType && <div><dt>סוג</dt><dd>{requestType.name}</dd></div>}
+                    <div><dt>נושא</dt><dd>{subject.trim() || '—'}</dd></div>
+                    <div><dt>דחיפות</dt><dd>{priorityLabel[priority]}</dd></div>
+                    <div>
+                      <dt>קבצים מצורפים</dt>
+                      <dd>{media.length ? `${media.length} קבצים` : 'ללא'}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
 
         <div className="wizard__nav">
@@ -368,6 +433,7 @@ export default function NewTicket() {
               יעד טיפול בקטגוריה זו: {category.sla_hours} שעות
             </span>
           )}
+          {uploading && <span className="cell-meta" role="status">{uploading}</span>}
           <span className="grow" />
           <Button type="button" variant="ghost" onClick={() => navigate('/tickets')}>
             ביטול

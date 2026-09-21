@@ -102,6 +102,23 @@ export function downloadUrl(kind: 'ticket' | 'subtask', id: number): string {
   return `${BASE}/attachments/${kind}/${id}`;
 }
 
+/** An object URL for showing a photograph or playing a recording in place.
+ *
+ *  An <img>/<video>/<audio> src cannot carry an Authorization header, and
+ *  putting a token in the URL would leak it into logs and history, so the
+ *  bytes are fetched with the header and handed to the element as a blob.
+ *  The caller owns the URL and must revoke it. */
+export async function attachmentObjectUrl(
+  kind: 'ticket' | 'subtask', id: number,
+): Promise<string> {
+  const token = getToken();
+  const res = await fetch(`${downloadUrl(kind, id)}?inline=true`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new ApiError(await readError(res), res.status);
+  return URL.createObjectURL(await res.blob());
+}
+
 /** Attachment downloads need the auth header, so fetch as a blob then save. */
 export async function downloadAttachment(
   kind: 'ticket' | 'subtask', id: number, filename: string,
