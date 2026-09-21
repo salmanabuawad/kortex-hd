@@ -8,6 +8,7 @@
  * caller does not have to think about revoking them.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Camera, FileText, Image as ImageIcon, Mic, Paperclip, Play, Square, Trash2, Video,
 } from 'lucide-react';
@@ -64,6 +65,7 @@ interface Props {
 }
 
 export function MediaPicker({ items, onChange, disabled }: Props) {
+  const { t } = useTranslation();
   const [error, setError] = useState('');
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -87,11 +89,11 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
     const accepted: PendingMedia[] = [];
     for (const file of files) {
       if (file.size > MAX_BYTES) {
-        setError(`${file.name} גדול מהמותר (${formatBytes(MAX_BYTES)})`);
+        setError(t('media.tooLarge', { name: file.name, size: formatBytes(MAX_BYTES) }));
         continue;
       }
       if (file.size === 0) {
-        setError(`${file.name} ריק`);
+        setError(t('media.empty', { name: file.name }));
         continue;
       }
       accepted.push({
@@ -105,7 +107,7 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
       setError('');
       onChange([...itemsRef.current, ...accepted]);
     }
-  }, [onChange]);
+  }, [onChange, t]);
 
   const remove = (id: string) => {
     const target = itemsRef.current.find((item) => item.id === id);
@@ -123,14 +125,14 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
     setError('');
     const mime = recorderMime();
     if (!mime) {
-      setError('הדפדפן הזה אינו תומך בהקלטה. אפשר לצרף קובץ שמע במקום.');
+      setError(t('media.noRecorder'));
       return;
     }
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError('אין גישה למיקרופון. יש לאשר את ההרשאה בדפדפן ולנסות שוב.');
+      setError(t('media.noMic'));
       return;
     }
     streamRef.current = stream;
@@ -149,7 +151,7 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
       // from the container we just recorded into, not guessed from the name.
       const ext = mime.startsWith('audio/mp4') ? 'm4a' : 'webm';
       const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '-');
-      add([new File([blob], `הקלטה-${stamp}.${ext}`, { type: mime })]);
+      add([new File([blob], `${t('media.recordingName')}-${stamp}.${ext}`, { type: mime })]);
     };
 
     recorderRef.current = recorder;
@@ -188,34 +190,34 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
         <div className="media__actions">
           <Button type="button" icon={<ImageIcon size={16} />} disabled={disabled}
                   onClick={() => pick(ACCEPT.image)}>
-            תמונה
+            {t('media.image')}
           </Button>
           <Button type="button" icon={<Camera size={16} />} disabled={disabled}
                   onClick={() => pick(ACCEPT.image, 'environment')}>
-            צילום
+            {t('media.capture')}
           </Button>
           <Button type="button" icon={<Video size={16} />} disabled={disabled}
                   onClick={() => pick(ACCEPT.video)}>
-            וידאו
+            {t('media.video')}
           </Button>
           {recording ? (
             <Button type="button" variant="danger" icon={<Square size={16} />}
                     onClick={stopRecording}>
-              עצירה · {mmss}
+              {t('media.stop')} · {mmss}
             </Button>
           ) : (
             <Button type="button" icon={<Mic size={16} />} disabled={disabled}
                     onClick={() => void startRecording()}>
-              הקלטה קולית
+              {t('media.record')}
             </Button>
           )}
           <Button type="button" variant="ghost" icon={<Paperclip size={16} />} disabled={disabled}
                   onClick={() => pick(ACCEPT.file)}>
-            קובץ
+            {t('media.file')}
           </Button>
         </div>
         <p className="media__hint">
-          אפשר גם לגרור לכאן קבצים · עד {formatBytes(MAX_BYTES)} לקובץ
+          {t('media.dropHint', { size: formatBytes(MAX_BYTES) })}
         </p>
       </div>
 
@@ -223,7 +225,7 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
 
       {recording && (
         <p className="media__recording" role="status">
-          <span className="media__pulse" aria-hidden /> מקליט… {mmss}
+          <span className="media__pulse" aria-hidden /> {t('media.recording')} {mmss}
         </p>
       )}
 
@@ -237,9 +239,9 @@ export function MediaPicker({ items, onChange, disabled }: Props) {
                 <span className="media__size">{formatBytes(item.file.size)}</span>
               </div>
               <Button type="button" size="sm" variant="ghost" icon={<Trash2 size={14} />}
-                      aria-label={`הסרת ${item.file.name}`}
+                      aria-label={t('media.removeOne', { name: item.file.name })}
                       disabled={disabled} onClick={() => remove(item.id)}>
-                הסרה
+                {t('media.remove')}
               </Button>
             </li>
           ))}

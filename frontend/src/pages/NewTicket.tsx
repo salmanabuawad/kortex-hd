@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Building2, Check, Database, LifeBuoy, Lightbulb,
   Network, Paperclip, Printer, Send, ShieldCheck, Sparkles, TicketPlus,
@@ -34,6 +35,7 @@ const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 type StepId = 'category' | 'type' | 'details' | 'media';
 
 export default function NewTicket() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -176,7 +178,7 @@ export default function NewTicket() {
       // the user just wrote -- it is reported, and the ticket still opens.
       const failed: string[] = [];
       for (const [index, item] of media.entries()) {
-        setUploading(`מעלה קובץ ${index + 1} מתוך ${media.length}…`);
+        setUploading(t('media.uploadingOne', { index: index + 1, total: media.length }));
         try {
           await upload(`/tickets/${ticket.id}/attachments`, item.file);
         } catch {
@@ -187,7 +189,7 @@ export default function NewTicket() {
 
       toast.success(`נפתחה קריאה ${ticket.number}`);
       if (failed.length) {
-        toast.error(`לא הועלו: ${failed.join(', ')}. אפשר לצרף אותם בלשונית הקבצים.`);
+        toast.error(t('media.uploadFailed', { names: failed.join(', ') }));
       }
       navigate(`/tickets/${ticket.id}`, { replace: true });
     } catch (err) {
@@ -206,7 +208,7 @@ export default function NewTicket() {
     category: 'במה מדובר?',
     type: 'סוג הפנייה',
     details: 'פרטי הפנייה',
-    media: 'תמונות והקלטות',
+    media: t('media.step'),
   };
 
   return (
@@ -392,19 +394,18 @@ export default function NewTicket() {
           {step === 'media' && (
             <div className="wizard__pane">
               <Card>
-                <CardHeader icon={<Paperclip size={18} />} title="תמונות, וידאו והקלטות" />
+                <CardHeader icon={<Paperclip size={18} />} title={t('media.title')} />
                 <div className="card__body stack">
                   <MediaPicker items={media} onChange={setMedia} disabled={busy} />
 
-                  <Banner tone="info" title="מה כדאי לצרף">
-                    צילום מסך או תמונה של התקלה, הודעת שגיאה, או הקלטה קולית קצרה
-                    שמתארת מה קרה. הקבצים יצורפו לקריאה מיד לאחר פתיחתה.
+                  <Banner tone="info" title={t('media.adviceTitle')}>
+                    {t('media.advice')}
                   </Banner>
                 </div>
               </Card>
 
               <Card>
-                <CardHeader icon={<Check size={18} />} title="סיכום לפני שליחה" />
+                <CardHeader icon={<Check size={18} />} title={t('media.summaryTitle')} />
                 <div className="card__body">
                   <dl className="summary">
                     <div><dt>קטגוריה</dt><dd>{category?.name ?? '—'}</dd></div>
@@ -412,8 +413,8 @@ export default function NewTicket() {
                     <div><dt>נושא</dt><dd>{subject.trim() || '—'}</dd></div>
                     <div><dt>דחיפות</dt><dd>{priorityLabel[priority]}</dd></div>
                     <div>
-                      <dt>קבצים מצורפים</dt>
-                      <dd>{media.length ? `${media.length} קבצים` : 'ללא'}</dd>
+                      <dt>{t('media.attached')}</dt>
+                      <dd>{media.length ? t('media.attachedCount', { count: media.length }) : t('media.none')}</dd>
                     </div>
                   </dl>
                 </div>
