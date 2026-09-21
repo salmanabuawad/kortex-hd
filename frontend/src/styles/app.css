@@ -493,13 +493,14 @@
   box-shadow: 0 0 0 4px var(--primary-soft);
 }
 .wizard__step--current .wizard__label { color: var(--primary); }
+/* Deliberately not a flex column: as flex items the step's cards would shrink
+   to fit instead of overflowing, so tall content was silently compressed and
+   the pane reported nothing to scroll. Each step wraps its own content in
+   .stack, which supplies the spacing. */
 .wizard__pane {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }
 
 /* --- media step: photographs, video and voice notes ----------------------- */

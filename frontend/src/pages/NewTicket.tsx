@@ -411,7 +411,7 @@ export default function NewTicket() {
           )}
 
           {step === 'media' && (
-            <div className="wizard__pane">
+            <div className="stack">
               <Card>
                 <CardHeader icon={<Paperclip size={18} />} title={t('media.title')} />
                 <div className="card__body stack">
