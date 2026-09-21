@@ -12,11 +12,13 @@ from __future__ import annotations
 import logging
 import smtplib
 from abc import ABC, abstractmethod
+from email.header import Header
 from email.message import EmailMessage
+from email.utils import formataddr
 
 from ...config import (
-    EMAIL_PROVIDER, SMS_PROVIDER, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT,
-    SMTP_USER, WHATSAPP_PROVIDER,
+    EMAIL_PROVIDER, SMS_PROVIDER, SMTP_FROM, SMTP_FROM_NAME, SMTP_HOST, SMTP_PASSWORD,
+    SMTP_PORT, SMTP_SSL, SMTP_USER, SUPPORT_INBOX, WHATSAPP_PROVIDER,
 )
 from ...constants import Channel
 
@@ -65,20 +67,39 @@ class LogProvider(Provider):
 class SmtpEmailProvider(Provider):
     name = "smtp"
 
+    def _use_ssl(self) -> bool:
+        """465 is TLS from the first byte, 587 upgrades with STARTTLS."""
+        if SMTP_SSL in {"1", "true", "yes"}:
+            return True
+        if SMTP_SSL in {"0", "false", "no"}:
+            return False
+        return SMTP_PORT == 465
+
     def send(self, recipient: str, subject: str, body: str) -> SendResult:
         if not SMTP_HOST:
             return SendResult(False, self.name, "SMTP_HOST is not configured")
         try:
             message = EmailMessage()
-            message["From"] = SMTP_FROM
+            message["From"] = formataddr((str(Header(SMTP_FROM_NAME, "utf-8")), SMTP_FROM))
             message["To"] = recipient
             message["Subject"] = subject
+            # A requester who hits reply should reach the desk. Without this the
+            # reply goes to the sending mailbox, which nobody reads.
+            if SUPPORT_INBOX and SUPPORT_INBOX != SMTP_FROM:
+                message["Reply-To"] = SUPPORT_INBOX
             message.set_content(body)
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as smtp:
-                smtp.starttls()
-                if SMTP_USER:
-                    smtp.login(SMTP_USER, SMTP_PASSWORD)
-                smtp.send_message(message)
+
+            if self._use_ssl():
+                with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=20) as smtp:
+                    if SMTP_USER:
+                        smtp.login(SMTP_USER, SMTP_PASSWORD)
+                    smtp.send_message(message)
+            else:
+                with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as smtp:
+                    smtp.starttls()
+                    if SMTP_USER:
+                        smtp.login(SMTP_USER, SMTP_PASSWORD)
+                    smtp.send_message(message)
             return SendResult(True, self.name)
         except Exception as exc:                      # noqa: BLE001 - reported, not raised
             return SendResult(False, self.name, str(exc))
@@ -86,7 +107,8 @@ class SmtpEmailProvider(Provider):
     def healthy(self) -> tuple[bool, str]:
         if not SMTP_HOST:
             return False, "SMTP_HOST חסר"
-        return True, f"SMTP {SMTP_HOST}:{SMTP_PORT}"
+        mode = "SSL" if self._use_ssl() else "STARTTLS"
+        return True, f"SMTP {SMTP_HOST}:{SMTP_PORT} ({mode}) כ־{SMTP_FROM}"
 
 
 _EMAIL = {"log": lambda: LogProvider(Channel.EMAIL), "smtp": SmtpEmailProvider}

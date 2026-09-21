@@ -96,13 +96,24 @@ EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "log")
 SMS_PROVIDER = os.getenv("SMS_PROVIDER", "log")
 WHATSAPP_PROVIDER = os.getenv("WHATSAPP_PROVIDER", "log")
 
+COUNCIL_NAME = os.getenv("COUNCIL_NAME", "מועצה מקומית בוקעאתא")
+
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "helpdesk@buqata.muni.il")
+SMTP_FROM = os.getenv("SMTP_FROM", "support@buqata.muni.il")
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", f"{COUNCIL_NAME} · מוקד שירות")
+# Port 465 speaks TLS from the first byte; 587 starts plain and upgrades. Guess
+# from the port so a relay on either works without a second setting, and allow
+# an override for the unusual case.
+SMTP_SSL = os.getenv("SMTP_SSL", "auto").lower()
 
-COUNCIL_NAME = os.getenv("COUNCIL_NAME", "מועצה מקומית בוקעאתא")
+# The service desk's own mailbox. It is copied on everything that happens to a
+# ticket, so the desk has a record outside the application, and it is the
+# Reply-To on what we send: a requester answering a confirmation should reach
+# the desk, not a noreply void.
+SUPPORT_INBOX = os.getenv("SUPPORT_INBOX", "support@buqata.muni.il")
 
 if not DATABASE_URL.startswith("postgresql"):
     raise RuntimeError(

@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from ...config import SUPPORT_INBOX
 from ...constants import Channel, Events
 from ...models import NotificationDelivery, NotificationEvent, User
 from .providers import provider_for
@@ -61,7 +62,22 @@ def emit(
 
     subject, body = render(event_key, ticket=ticket, subtask=subtask, context=context)
 
-    for recipient in recipients:
+    # The service desk is copied on anything that happens to a ticket -- opened,
+    # assigned, transferred, resolved, commented on -- so it holds a record
+    # outside the application. Done here rather than at each call site so a new
+    # event cannot quietly skip the desk. Deduplicated, because the desk address
+    # is often also the resolver's.
+    delivery_list = list(recipients)
+    if ticket is not None and SUPPORT_INBOX:
+        already = {
+            (r.address_for(r.channel or Channel.EMAIL) or "").lower()
+            for r in delivery_list if r is not None
+        }
+        if SUPPORT_INBOX.lower() not in already:
+            delivery_list.append(
+                Recipient("מוקד שירות", email=SUPPORT_INBOX, channel=Channel.EMAIL))
+
+    for recipient in delivery_list:
         if recipient is None:
             continue
         channel = recipient.channel or Channel.EMAIL

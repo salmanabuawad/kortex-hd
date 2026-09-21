@@ -100,6 +100,7 @@ class SlaState:
 class Events:
     """Notification event keys. Adapters subscribe to these, domain code emits them."""
     TICKET_CREATED = "ticket.created"
+    TICKET_CONFIRMED = "ticket.confirmed"
     TICKET_ASSIGNED = "ticket.assigned"
     TICKET_TRANSFERRED = "ticket.transferred"
     TICKET_RESOLVED = "ticket.resolved"

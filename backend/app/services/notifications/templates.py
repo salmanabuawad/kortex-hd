@@ -1,8 +1,16 @@
 """Hebrew notification copy, one entry per event key."""
-from ...config import COUNCIL_NAME
+from ...config import COUNCIL_NAME, PUBLIC_BASE_URL
 from ...constants import Events
 
 _SIGNATURE = f"\n\n—\n{COUNCIL_NAME} · מוקד שירות"
+
+# The stored value is an English key; a message to a requester should not say
+# "normal" in the middle of a Hebrew sentence.
+_PRIORITIES = {"low": "נמוכה", "normal": "רגילה", "high": "גבוהה", "urgent": "דחופה"}
+
+
+def _priority_label(value) -> str:
+    return _PRIORITIES.get(str(value), str(value or ""))
 
 
 def _ticket_line(ticket) -> str:
@@ -15,6 +23,15 @@ _TEMPLATES = {
     Events.TICKET_CREATED: (
         "נפתחה קריאה חדשה {number}",
         "נפתחה קריאה חדשה ומחכה לטיפול.\n{ticket_line}\nקטגוריה: {category}\nפותח הקריאה: {requester}",
+    ),
+    Events.TICKET_CONFIRMED: (
+        "הקריאה שלך נקלטה — {number}",
+        "הפנייה שלך התקבלה במוקד השירות ומספרה {number}.\n"
+        "{ticket_line}\n"
+        "קטגוריה: {category}\n"
+        "דחיפות: {priority}\n\n"
+        "אפשר לעקוב אחר הטיפול בקריאה בכתובת:\n{ticket_url}\n\n"
+        "לשאלות אפשר להשיב להודעה זו.",
     ),
     Events.TICKET_ASSIGNED: (
         "הוקצתה אליך קריאה {number}",
@@ -79,7 +96,8 @@ def render(event_key: str, *, ticket=None, subtask=None, context: dict | None = 
         "ticket_line": _ticket_line(ticket),
         "category": ticket.category.name if ticket and ticket.category else "",
         "requester": ticket.requester.full_name if ticket and ticket.requester else "",
-        "priority": context.get("priority", ticket.priority if ticket else ""),
+        "priority": _priority_label(context.get("priority", ticket.priority if ticket else "")),
+        "ticket_url": f"{PUBLIC_BASE_URL}/tickets/{ticket.id}" if ticket else PUBLIC_BASE_URL,
         "subtask_number": subtask.number if subtask else "",
         "subtask_title": subtask.title if subtask else "",
         "status": context.get("status", ""),

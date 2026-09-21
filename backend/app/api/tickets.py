@@ -160,6 +160,12 @@ def create_ticket(
                      details={"reason": approval.reason})
 
     db.flush()
+    # The requester gets their own message, not a copy of the desk's. It leads
+    # with the ticket number, which is what they will quote when they follow up.
+    notifications.emit(
+        db, Events.TICKET_CONFIRMED,
+        recipients=[Recipient.from_user(user)],
+        ticket=ticket, context={"priority": priority})
     notifications.emit(
         db, Events.TICKET_CREATED,
         recipients=[Recipient.from_user(category.resolver)],
