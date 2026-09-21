@@ -569,3 +569,39 @@ def test_admin_can_change_a_user_email(client, world):
     clash = client.patch(f"/api/users/{user_id}", headers=admin,
                          json={"email": "requester@qa.buqata.muni.il"})
     assert clash.status_code == 400
+
+
+def test_identity_is_the_user_id_not_the_email(client, world):
+    """Email and name are attributes, not identity. Renaming either must leave
+    the account, its session and everything it is referenced by untouched --
+    which is only true because every relation keys on users.id."""
+    admin = auth(client, world, "admin")
+    created = client.post("/api/users", headers=admin, json={
+        "full_name": "שם ישן", "email": "old.address@qa.buqata.muni.il",
+        "role": "requester", "password": "TempPass12345", "active": True}).json()
+    user_id = created["id"]
+
+    security._hits.clear()
+    session = client.post("/api/auth/login", json={
+        "email": "old.address@qa.buqata.muni.il", "password": "TempPass12345"}).json()
+    headers = {"Authorization": f"Bearer {session['token']}"}
+
+    ticket = client.post("/api/tickets", headers=headers, json={
+        "subject": "לפני שינוי הכתובת", "description": "בדיקה",
+        "category_id": world["category"], "request_type_id": world["fault"]}).json()
+
+    renamed = client.patch(f"/api/users/{user_id}", headers=admin, json={
+        "email": "new.address@qa.buqata.muni.il", "full_name": "שם חדש"})
+    assert renamed.status_code == 200
+    assert renamed.json()["id"] == user_id          # same row, same identity
+
+    # The token was issued against the id, so the session survives the rename.
+    me = client.get("/api/me", headers=headers)
+    assert me.status_code == 200
+    assert me.json()["email"] == "new.address@qa.buqata.muni.il"
+    assert me.json()["full_name"] == "שם חדש"
+
+    # The ticket still belongs to the same person, now under the new details.
+    still_there = client.get(f"/api/tickets/{ticket['id']}", headers=headers)
+    assert still_there.status_code == 200
+    assert still_there.json()["requester"]["id"] == user_id
