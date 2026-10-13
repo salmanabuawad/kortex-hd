@@ -75,7 +75,9 @@ const staffOnly = (element: ReactNode) => inShell(
 
 export default function App() {
   return (
-    <BrowserRouter>
+    // The base is "/" for the council's own host and "/hd/" when built with
+    // --base=/hd/ to sit under a path on a shared host.
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ToastProvider>
         <DisplayProvider>
         <AuthProvider>
@@ -120,7 +122,7 @@ export default function App() {
                 <EmptyState
                   title="העמוד לא נמצא"
                   text="ייתכן שהקישור שגוי או שהעמוד הוסר."
-                  action={<a className="btn btn--primary" href="/">חזרה ללוח הבקרה</a>}
+                  action={<a className="btn btn--primary" href={import.meta.env.BASE_URL}>חזרה ללוח הבקרה</a>}
                 />
                 </div>,
               )}

@@ -1,0 +1,60 @@
+# support.kortexd.com: the helpdesk instance lives under /hd; everything else
+# still redirects to the council's own host, as it did before /hd existed.
+server {
+    listen 80;
+    server_name support.kortexd.com;
+    location /.well-known/acme-challenge/ { root /var/www/html; }
+    location / { return 301 https://support.kortexd.com$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    server_name support.kortexd.com;
+    ssl_certificate     /etc/letsencrypt/live/support.kortexd.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/support.kortexd.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "same-origin" always;
+
+    client_max_body_size 64m;
+
+    # Static files are served from public/, where public/hd links to
+    # frontend/dist. That keeps the URL path and the disk path the same, so
+    # try_files works with root (it misbehaves with alias).
+    root /opt/municipos-helpdesk-hd/public;
+
+    location = /hd { return 301 /hd/; }
+
+    # API -> uvicorn on 127.0.0.1:8073. The backend's routes start at /api, so
+    # the /hd prefix is stripped here.
+    location /hd/api/ {
+        proxy_pass http://127.0.0.1:8073/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Hashed build assets: 404 on a stale hash rather than falling back to
+    # index.html (which causes MIME-type errors), and cache them for good.
+    location /hd/assets/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location = /hd/index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # SPA: client-side routes (incl. /hd/external/<token>) get index.html.
+    location /hd/ {
+        try_files $uri $uri/ /hd/index.html;
+    }
+
+    location / { return 301 https://support.buqata.muni.il$request_uri; }
+}
