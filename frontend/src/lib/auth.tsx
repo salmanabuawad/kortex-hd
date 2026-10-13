@@ -3,7 +3,7 @@ import {
 } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
-import { get, onUnauthorized, post, setToken, getToken } from './api';
+import { api, get, onUnauthorized, setToken, getToken } from './api';
 import type { Role, User } from './types';
 
 interface AuthValue {
@@ -43,7 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const result = await post<{ token: string; user: User }>('/auth/login', { email, password });
+    // Sent without any stored token: signing in is not a session to expire.
+    const result = await api<{ token: string; user: User }>(
+      '/auth/login', { method: 'POST', body: { email, password }, auth: false });
     setToken(result.token);
     setUser(result.user);
     return result.user;

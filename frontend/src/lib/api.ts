@@ -49,10 +49,8 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     payload = JSON.stringify(body);
   }
 
-  if (auth) {
-    const token = getToken();
-    if (token) requestHeaders.set('Authorization', `Bearer ${token}`);
-  }
+  const token = auth ? getToken() : null;
+  if (token) requestHeaders.set('Authorization', `Bearer ${token}`);
 
   let res: Response;
   try {
@@ -61,7 +59,10 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     throw new ApiError('אין חיבור לשרת. בדקו את החיבור לרשת.', 0);
   }
 
-  if (res.status === 401 && auth) {
+  // Only a request that carried a token can have an expired session. Without
+  // one -- a sign-in with a wrong password -- the server's own message is the
+  // right one to show.
+  if (res.status === 401 && token) {
     setToken(null);
     onUnauthorized.handler?.();
     throw new ApiError('פג תוקף ההתחברות. התחברו מחדש.', 401);
